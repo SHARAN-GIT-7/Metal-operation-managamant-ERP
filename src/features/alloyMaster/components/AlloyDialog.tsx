@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
+  Dialog, DialogContent, DialogActions,
   Box, Typography, Button, TextField, MenuItem,
   Select, FormControl, InputLabel, CircularProgress,
-  Divider, InputAdornment, Switch, FormControlLabel,
+  Divider, InputAdornment, Switch,
   Table, TableHead, TableBody, TableRow, TableCell,
   Tooltip, IconButton, Chip, Autocomplete,
 } from '@mui/material';
 import {
-  Beaker, Percent, Palette, Zap, CheckCircle2, XCircle,
-  FlaskConical, PlusCircle, Trash2, ChevronDown,
+  Percent, Palette, Zap, CheckCircle2, XCircle,
+  FlaskConical, PlusCircle, Trash2,
 } from 'lucide-react';
 import type { AlloyMaster, AlloyMasterFormData, ChemicalElement } from '../types/alloyMaster.types';
 import {
@@ -98,7 +98,7 @@ const CompositionRow = ({
         value={el.element}
         onChange={(e) => onChange(idx, 'element', e.target.value.toUpperCase())}
         size="small"
-        inputProps={{ style: { fontFamily: 'monospace', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' } }}
+        slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' } } }}
         sx={{ width: 70, '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
       />
     </TableCell>
@@ -108,7 +108,7 @@ const CompositionRow = ({
         onChange={(e) => onChange(idx, 'min', parseFloat(e.target.value) || 0)}
         size="small"
         type="number"
-        inputProps={{ min: 0, max: 100, step: 0.01, style: { fontSize: '0.78rem' } }}
+        slotProps={{ htmlInput: { min: 0, max: 100, step: 0.01, style: { fontSize: '0.78rem' } } }}
         sx={{ width: 90, '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
       />
     </TableCell>
@@ -118,7 +118,7 @@ const CompositionRow = ({
         onChange={(e) => onChange(idx, 'max', parseFloat(e.target.value) || 0)}
         size="small"
         type="number"
-        inputProps={{ min: 0, max: 100, step: 0.01, style: { fontSize: '0.78rem' } }}
+        slotProps={{ htmlInput: { min: 0, max: 100, step: 0.01, style: { fontSize: '0.78rem' } } }}
         sx={{ width: 90, '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
       />
     </TableCell>
@@ -260,7 +260,7 @@ const AlloyDialog = ({ open, onClose, onSave, editAlloy }: Props) => {
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden', maxHeight: '92vh' } }}
+      slotProps={{ paper: { sx: { borderRadius: 3, overflow: 'hidden', maxHeight: '92vh' } } }}
     >
       {/* ── Header ── */}
       <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg, #1565C0 0%, #0d47a1 100%)', color: 'white', flexShrink: 0 }}>
@@ -307,22 +307,26 @@ const AlloyDialog = ({ open, onClose, onSave, editAlloy }: Props) => {
                       input: { color: 'white', '&::placeholder': { color: 'rgba(255,255,255,0.7)' } },
                     }}
                     slotProps={{
+                      ...params.slotProps,
                       input: {
-                        ...params.InputProps,
+                        ...params.slotProps.input,
                         startAdornment: (
-                          <InputAdornment position="start">
-                            <Zap size={14} color="rgba(255,255,255,0.8)" />
-                          </InputAdornment>
+                          <>
+                            <InputAdornment position="start">
+                              <Zap size={14} color="rgba(255,255,255,0.8)" />
+                            </InputAdornment>
+                            {params.slotProps.input.startAdornment}
+                          </>
                         ),
                       },
                     }}
                   />
                 )}
-                PaperComponent={({ children }) => (
-                  <Box sx={{ bgcolor: '#fff', borderRadius: 2, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', mt: 0.5 }}>
-                    {children}
-                  </Box>
-                )}
+                slotProps={{
+                  paper: {
+                    sx: { bgcolor: '#fff', borderRadius: 2, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', mt: 0.5 }
+                  }
+                }}
               />
               {loadTemplate && (
                 <Typography sx={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.75)', mt: 0.5, textAlign: 'right' }}>
@@ -368,7 +372,7 @@ const AlloyDialog = ({ open, onClose, onSave, editAlloy }: Props) => {
                 helperText={errors.alloyCode || 'e.g. ADC12, LM6, LM25'}
                 size="small"
                 sx={{ flex: 1 }}
-                inputProps={{ style: { fontFamily: 'monospace', fontWeight: 700 } }}
+                slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
                 disabled={isEdit}
               />
               <TextField
@@ -434,9 +438,9 @@ const AlloyDialog = ({ open, onClose, onSave, editAlloy }: Props) => {
                 helperText={errors.defaultSellingMarginPercentage || 'Used in Cost Ledger calculations'}
                 size="small"
                 type="number"
-                inputProps={{ min: 0, max: 100, step: 0.5 }}
                 sx={{ flex: 1 }}
                 slotProps={{
+                  htmlInput: { min: 0, max: 100, step: 0.5 },
                   input: {
                     endAdornment: (
                       <InputAdornment position="end">

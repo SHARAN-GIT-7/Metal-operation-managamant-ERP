@@ -9,7 +9,6 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
-  where,
   writeBatch,
   getDoc,
 } from 'firebase/firestore';
@@ -180,6 +179,7 @@ export const updateDispatch = async (
     vehicleNumber: form.vehicleNumber.trim().toUpperCase(),
     driverName: form.driverName.trim(),
     remarks: form.remarks.trim(),
+    updatedBy,
     updatedAt: serverTimestamp(),
   });
 

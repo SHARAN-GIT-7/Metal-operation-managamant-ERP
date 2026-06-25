@@ -9,7 +9,7 @@ import {
   Truck, Plus, Edit2, Trash2, RefreshCw, Search,
   ChevronLeft, ChevronRight, ArrowUpDown, Package,
   User, Car, FileText, X, AlertTriangle, Weight,
-  TrendingUp, Hash, Building2,
+  Hash, Building2,
 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
@@ -19,7 +19,7 @@ import {
   updateDispatch,
   deleteDispatch,
 } from '../services/dispatch.service';
-import type { DispatchEntry, DispatchFormData, DispatchItemForm } from '../types/dispatch.types';
+import type { DispatchEntry, DispatchFormData } from '../types/dispatch.types';
 
 import { fetchFinishedGoods } from '../../finishedGoods/services/finishedGoods.service';
 import type { FinishedGoodEntry } from '../../finishedGoods/types/finishedGoods.types';
@@ -50,8 +50,7 @@ const fmtNum = (v: number | undefined | null, decimals = 1) => {
   if (v === undefined || v === null) return '—';
   return v.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 };
-const fmtMoney = (v: number | undefined | null) =>
-  v == null || v === 0 ? '—' : '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
 
 // ─── Customer Hover Popup ─────────────────────────────────────────────────────
 const CustomerHoverPopup = ({ vendor }: { vendor: VendorMaster | undefined }) => {
@@ -159,7 +158,7 @@ const HeatHoverPopup = ({
               {materials.map((m: any, idx) => {
                 const qty = m.weightKg ?? 0;
                 const rate = m.ratePerKg ?? m.rate ?? 0;
-                const amt = m.amount ?? (qty * rate) ?? 0;
+                const amt = m.amount ?? (qty * rate);
                 if (qty === 0) return null;
                 return (
                   <tr key={m.materialId || idx} style={{ borderBottom: '1px solid #f8fafc' }}>
@@ -232,11 +231,7 @@ const DispatchDialog = ({ open, onClose, onSave, initial, finishedGoods, custome
     [finishedGoods]
   );
 
-  // Unique alloys from available heats
-  const alloyOptions = useMemo(() =>
-    [...new Set(availableHeats.map((fg) => fg.alloyType).filter(Boolean))].sort(),
-    [availableHeats]
-  );
+
 
   // Heats for the selected alloy (and not already added)
   const heatsForAlloy = useMemo(() => {
@@ -333,10 +328,10 @@ const DispatchDialog = ({ open, onClose, onSave, initial, finishedGoods, custome
     await onSave(form);
   };
 
-  const selectedCustomer = customers.find((c) => c.id === form.customerId);
+
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 3, maxHeight: '90vh' } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: 3, maxHeight: '90vh' } } }}>
       <DialogTitle sx={{ pb: 1, borderBottom: '1px solid #f1f5f9' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -360,7 +355,7 @@ const DispatchDialog = ({ open, onClose, onSave, initial, finishedGoods, custome
             onChange={(e) => setForm((p) => ({ ...p, dispatchDate: e.target.value }))}
             error={!!errors.dispatchDate}
             helperText={errors.dispatchDate}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <FormControl size="small" error={!!errors.customerId}>
             <InputLabel>Customer</InputLabel>
@@ -484,7 +479,7 @@ const DispatchDialog = ({ open, onClose, onSave, initial, finishedGoods, custome
                     onChange={(e) => updateItem(idx, 'dispatchWeightKg', e.target.value)}
                     error={!!errors[`wt_${idx}`]}
                     helperText={errors[`wt_${idx}`]}
-                    inputProps={{ min: 0, max: item.availableWeightKg, step: 0.1 }}
+                    slotProps={{ htmlInput: { min: 0, max: item.availableWeightKg, step: 0.1 } }}
                     sx={{ '& .MuiInputBase-input': { fontSize: '0.82rem' } }}
                   />
                   <Typography sx={{ fontSize: '0.75rem', color: '#64748b', pl: 0.5 }}>
@@ -497,7 +492,7 @@ const DispatchDialog = ({ open, onClose, onSave, initial, finishedGoods, custome
                     onChange={(e) => updateItem(idx, 'dispatchPieces', e.target.value)}
                     error={!!errors[`pcs_${idx}`]}
                     helperText={errors[`pcs_${idx}`]}
-                    inputProps={{ min: 0, max: item.availablePieces, step: 1 }}
+                    slotProps={{ htmlInput: { min: 0, max: item.availablePieces, step: 1 } }}
                     sx={{ '& .MuiInputBase-input': { fontSize: '0.82rem' } }}
                   />
                   <IconButton size="small" onClick={() => removeHeat(idx)} sx={{ color: '#ef4444' }}>
@@ -554,7 +549,7 @@ const DeleteConfirmDialog = ({
   onConfirm: () => Promise<void>;
   deleting: boolean;
 }) => (
-  <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+  <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
     <DialogTitle sx={{ pb: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <AlertTriangle size={20} color="#dc2626" />
@@ -752,28 +747,7 @@ export default function DispatchPage() {
 
   const openEdit = (d: DispatchEntry) => { setEditTarget(d); setDialogOpen(true); };
 
-  // ── Table header helper ───────────────────────────────────────────────────
-  const Th = ({ label, sortable, sKey }: { label: string; sortable?: boolean; sKey?: string }) => (
-    <Box
-      component="th"
-      onClick={sortable && sKey ? () => toggleSort(sKey) : undefined}
-      sx={{
-        px: 2, py: 1.25, textAlign: 'left', bgcolor: '#f8fafc', fontWeight: 700,
-        fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5,
-        borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap',
-        cursor: sortable ? 'pointer' : 'default',
-        userSelect: 'none',
-        '&:hover': sortable ? { color: THEME } : {},
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        {label}
-        {sortable && sKey && sortKey === sKey && (
-          <ArrowUpDown size={11} color={THEME} />
-        )}
-      </Box>
-    </Box>
-  );
+
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

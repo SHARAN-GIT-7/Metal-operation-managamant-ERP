@@ -675,8 +675,8 @@ const CostLedgerPage = () => {
                           m => m.materialId === f.id || m.materialId === f.materialId || m.materialCode === f.materialCode
                         );
                         const qty = mat ? (mat.weightKg ?? 0) : 0;
-                        const rate = mat ? (mat.rate ?? mat.ratePerKg ?? mat.costPerKg ?? 0) : 0;
-                        const amt = mat ? (mat.amount ?? mat.totalCost ?? 0) : 0;
+                        const rate = mat ? ((mat as any).rate ?? mat.ratePerKg ?? (mat as any).costPerKg ?? 0) : 0;
+                        const amt = mat ? (mat.amount ?? (mat as any).totalCost ?? 0) : 0;
 
                         return (
                           <Fragment key={f.id}>
@@ -804,7 +804,7 @@ const CostLedgerPage = () => {
 
       {/* ── Delete Confirmation Dialog ── */}
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth
-        PaperProps={{ className: "rounded-xl text-slate-800" }}
+        slotProps={{ paper: { className: "rounded-xl text-slate-800" } }}
       >
         <DialogTitle className="font-bold text-lg pb-1.5 flex items-center gap-1.5">
           <X className="text-red-500" size={20} /> Delete Cost Entry

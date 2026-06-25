@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Typography, Box,
-  Divider, CircularProgress, MenuItem,
+  CircularProgress, MenuItem,
   FormControlLabel, Checkbox,
 } from '@mui/material';
 import { X, Calculator, RefreshCw } from 'lucide-react';
@@ -211,7 +211,7 @@ const CostEntryDialog = ({ open, onClose, onSave, editEntry }: Props) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth
-      PaperProps={{ className: "rounded-xl max-h-[95vh] text-slate-800" }}
+      slotProps={{ paper: { className: "rounded-xl max-h-[95vh] text-slate-800" } }}
     >
       {/* Header */}
       <DialogTitle className="flex items-center justify-between border-b border-slate-100 py-4 px-6 bg-slate-50/50">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box, Typography, Card, CardContent, Button, IconButton,
   Tooltip, CircularProgress, Dialog, DialogTitle, DialogContent,
@@ -6,16 +6,15 @@ import {
   InputLabel, TextField, Chip, LinearProgress,
 } from '@mui/material';
 import {
-  Package, RefreshCw, Edit, Search, ChevronLeft, ChevronRight,
-  ArrowUpDown, X, TrendingUp, Layers, Truck, IndianRupee,
-  CheckCircle2, AlertTriangle, Clock, Archive, ChevronDown,
+  Package, Edit, Search, ChevronLeft, ChevronRight,
+  ArrowUpDown, X, Layers, Truck, IndianRupee,
+  CheckCircle2, Archive, ChevronDown,
   BarChart3, TableIcon,
 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
 import {
   fetchFinishedGoods,
-  syncFinishedGoodsFromProduction,
   updateFinishedGood,
   approveFinishedGood,
 } from '../services/finishedGoods.service';
@@ -31,9 +30,7 @@ import { fetchCostLedger } from '../../costLedger/services/costLedger.service';
 import type { CostLedgerEntry } from '../../costLedger/types/costLedger.types';
 import { fetchQualityControlEntries } from '../../qualityControl/services/qualityControl.service';
 import type { QualityControlEntry } from '../../qualityControl/types/qualityControl.types';
-import { useAuth } from '../../../context/AuthContext';
-import { subscribeAlloys } from '../../alloyMaster/services/alloyMaster.service';
-import type { AlloyMaster } from '../../alloyMaster/types/alloyMaster.types';
+
 
 // ─── Constants & Colors ───────────────────────────────────────────────────────
 const THEME_BLUE = '#1565C0';
@@ -150,7 +147,7 @@ const HeatHoverDetails = ({ heatNo, productionEntries, costEntries }: HeatHoverD
               {materials.map((m: any, idx) => {
                 const qty = m.weightKg ?? 0;
                 const rate = m.ratePerKg ?? m.rate ?? 0;
-                const amt = m.amount ?? (qty * rate) ?? 0;
+                const amt = m.amount ?? (qty * rate);
                 if (qty === 0) return null; // Only show materials that were actually used
                 return (
                   <tr key={m.materialId || idx} style={{ borderBottom: '1px solid #f8fafc' }}>
@@ -410,7 +407,7 @@ const EditDialog = ({ open, entry, onClose, onSave }: EditDialogProps) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
-      PaperProps={{ className: 'rounded-2xl text-slate-800' }}
+      slotProps={{ paper: { className: 'rounded-2xl text-slate-800' } }}
     >
       <DialogTitle className="flex items-center justify-between border-b border-slate-100 py-4 px-6 bg-slate-50/50">
         <div className="flex items-center gap-2">
@@ -789,7 +786,6 @@ const AlloyDetailView = ({ group, isAdmin, onEdit, onBack, productionEntries, co
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const FinishedGoodsPage = () => {
-  const { user } = useAuth();
   const isAdmin = true;
 
   const [entries, setEntries] = useState<FinishedGoodEntry[]>([]);

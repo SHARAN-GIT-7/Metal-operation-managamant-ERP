@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import {
   Plus, Search, Edit2, Trash2, Beaker,
-  CheckCircle, XCircle, AlertTriangle,
+  CheckCircle, AlertTriangle,
   Filter, RefreshCw, Percent, Ban,
   ShieldCheck, ShieldOff, FlaskConical, BarChart3,
 } from 'lucide-react';
@@ -709,7 +709,7 @@ const AlloyMasterPage = () => {
       />
 
       {/* Delete Confirmation */}
-      <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
           <Box sx={{ p: 1, bgcolor: '#fef2f2', borderRadius: 1.5, display: 'flex' }}>
             <AlertTriangle size={18} color="#dc2626" />
@@ -736,7 +736,7 @@ const AlloyMasterPage = () => {
       </Dialog>
 
       {/* Status Change Confirmation */}
-      <Dialog open={!!statusConfirm} onClose={() => setStatusConfirm(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog open={!!statusConfirm} onClose={() => setStatusConfirm(null)} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
           <Box sx={{ p: 1, bgcolor: '#fef9c3', borderRadius: 1.5, display: 'flex' }}>
             <AlertTriangle size={18} color="#b45309" />
