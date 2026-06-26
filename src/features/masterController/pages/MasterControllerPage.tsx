@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box, Typography, Button, Card, CardContent,
   Table, TableHead, TableBody, TableRow, TableCell,
@@ -10,7 +10,7 @@ import {
 import {
   Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight,
   Package, Database, AlertTriangle,
-  CheckCircle, XCircle, Settings,
+  CheckCircle, XCircle, Settings, ArrowUpDown,
 } from 'lucide-react';
 import type { MaterialMaster, MaterialMasterFormData } from '../types/materialMaster.types';
 import {
@@ -49,6 +49,19 @@ const MasterControllerPage = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'All' | 'Active' | 'Disabled'>('All');
 
+  // Sorting states
+  const [sortKey, setSortKey] = useState<string>('materialId');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMaterial, setEditMaterial] = useState<MaterialMaster | null>(null);
@@ -64,14 +77,39 @@ const MasterControllerPage = () => {
     return () => unsub();
   }, []);
 
-  const filtered = materials.filter((m) => {
-    const matchSearch =
-      m.materialName.toLowerCase().includes(search.toLowerCase()) ||
-      m.materialCode.toLowerCase().includes(search.toLowerCase()) ||
-      m.materialId.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === 'All' || m.status === filter;
-    return matchSearch && matchFilter;
-  });
+  const filtered = useMemo(() => {
+    const list = materials.filter((m) => {
+      const matchSearch =
+        m.materialName.toLowerCase().includes(search.toLowerCase()) ||
+        m.materialCode.toLowerCase().includes(search.toLowerCase()) ||
+        m.materialId.toLowerCase().includes(search.toLowerCase());
+      const matchFilter = filter === 'All' || m.status === filter;
+      return matchSearch && matchFilter;
+    });
+
+    list.sort((a, b) => {
+      let av: any;
+      let bv: any;
+      if (sortKey === 'updatedAt') {
+        av = a.updatedAt instanceof Timestamp ? a.updatedAt.seconds : 0;
+        bv = b.updatedAt instanceof Timestamp ? b.updatedAt.seconds : 0;
+      } else {
+        av = (a as any)[sortKey];
+        bv = (b as any)[sortKey];
+      }
+
+      if (av === undefined || av === null) return 1;
+      if (bv === undefined || bv === null) return -1;
+      if (typeof av === 'string' && typeof bv === 'string') {
+        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [materials, search, filter, sortKey, sortDir]);
 
   const stats = {
     total: materials.length,
@@ -237,14 +275,37 @@ const MasterControllerPage = () => {
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                  {['ID', 'Code', 'Material Name', 'Efficiency', 'Min. Stock', 'Unit', 'Visibility', 'Status', 'Updated', 'Actions'].map((h) => (
-                    <TableCell key={h} sx={{
-                      fontSize: '0.65rem', fontWeight: 700, color: '#64748b',
-                      textTransform: 'uppercase', letterSpacing: 0.6,
-                      borderBottom: '1px solid #e2e8f0', py: 1.5, px: 2,
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {h}
+                  {[
+                    { label: 'ID', key: 'materialId' },
+                    { label: 'Code', key: 'materialCode' },
+                    { label: 'Material Name', key: 'materialName' },
+                    { label: 'Efficiency', key: 'efficiencyPercentage' },
+                    { label: 'Min. Stock', key: 'minimumStockKg' },
+                    { label: 'Unit', key: 'unit' },
+                    { label: 'Visibility', key: 'showInWarehouse' },
+                    { label: 'Status', key: 'status' },
+                    { label: 'Updated', key: 'updatedAt' },
+                    { label: 'Actions', key: '' }
+                  ].map((col) => (
+                    <TableCell
+                      key={col.label}
+                      onClick={() => col.key && handleSort(col.key)}
+                      sx={{
+                        fontSize: '0.65rem', fontWeight: 700, color: '#64748b',
+                        textTransform: 'uppercase', letterSpacing: 0.6,
+                        borderBottom: '1px solid #e2e8f0', py: 1.5, px: 2,
+                        whiteSpace: 'nowrap',
+                        cursor: col.key ? 'pointer' : 'default',
+                        userSelect: 'none',
+                        '&:hover': col.key ? { bgcolor: '#f1f5f9' } : {},
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        {col.label}
+                        {col.key && (
+                          <ArrowUpDown size={10} style={{ color: sortKey === col.key ? '#1565C0' : '#94a3b8', opacity: sortKey === col.key ? 1 : 0.4 }} />
+                        )}
+                      </Box>
                     </TableCell>
                   ))}
                 </TableRow>

@@ -1,4 +1,5 @@
-import { Box, Typography, Chip } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography, Chip, Button } from '@mui/material';
 import { LayoutDashboard } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardFilters } from '../hooks/useDashboardFilters';
@@ -10,7 +11,13 @@ import FinancialSection from '../components/FinancialSection';
 import DispatchSection from '../components/DispatchSection';
 import QualitySection from '../components/QualitySection';
 
+// Revamped Overview Cards
+import ProductionPerformanceCard from '../components/ProductionPerformanceCard';
+
+type DashboardTab = 'overview' | 'production' | 'inventory' | 'financial' | 'dispatch' | 'quality';
+
 const DashboardPage = () => {
+  const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const { data, loading, lastRefreshed, refresh } = useDashboardData();
   const { filters, setFilters, filterOptions, analytics, filteredCounts } = useDashboardFilters(data);
 
@@ -70,23 +77,93 @@ const DashboardPage = () => {
         loading={loading}
       />
 
-      {/* ── KPI Cards ── */}
-      <KpiCards kpis={analytics.kpis} loading={loading} />
+      {/* ── Dashboard Navigation Tabs ── */}
+      <Box sx={{ display: 'flex', gap: 1, mb: 3, overflowX: 'auto', pb: 1, width: '100%', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+        {[
+          { value: 'overview', label: 'Executive Overview' },
+          { value: 'production', label: 'Production Analytics' },
+          { value: 'inventory', label: 'Inventory Analytics' },
+          { value: 'financial', label: 'Financial Analytics' },
+          { value: 'dispatch', label: 'Dispatch Analytics' },
+          { value: 'quality', label: 'Quality & Efficiency' },
+        ].map((tab) => (
+          <Button
+            key={tab.value}
+            variant={activeTab === tab.value ? 'contained' : 'outlined'}
+            onClick={() => setActiveTab(tab.value as DashboardTab)}
+            sx={{
+              borderRadius: 3,
+              textTransform: 'none',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              px: 2,
+              py: 0.6,
+              bgcolor: activeTab === tab.value ? '#1e293b' : 'transparent',
+              color: activeTab === tab.value ? '#ffffff' : '#64748b',
+              borderColor: activeTab === tab.value ? '#1e293b' : '#e2e8f0',
+              flexShrink: 0,
+              '&:hover': {
+                bgcolor: activeTab === tab.value ? '#0f172a' : '#f8fafc',
+                borderColor: activeTab === tab.value ? '#0f172a' : '#cbd5e1',
+              }
+            }}
+          >
+            {tab.label}
+          </Button>
+        ))}
+      </Box>
 
-      {/* ── Section 2: Production Analytics ── */}
-      <ProductionSection analytics={analytics} loading={loading} />
+      {/* ── Tab Views ── */}
+      {activeTab === 'overview' && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Row 1: Production Performance Chart (Full Width) */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <ProductionPerformanceCard
+                analytics={analytics}
+                kpi={analytics.kpis[0]}
+                filters={filters}
+                setFilters={setFilters}
+              />
+            </Box>
+          </Box>
+        </Box>
+      )}
 
-      {/* ── Section 3: Inventory Analytics ── */}
-      <InventorySection analytics={analytics} inventoryItems={data.inventoryItems} loading={loading} />
+      {activeTab === 'production' && (
+        <Box>
+          <KpiCards kpis={analytics.kpis.filter(k => ['Total Production', 'Avg Recovery', 'Production Hours'].includes(k.label))} loading={loading} />
+          <ProductionSection analytics={analytics} loading={loading} />
+        </Box>
+      )}
 
-      {/* ── Section 4: Financial Analytics ── */}
-      <FinancialSection analytics={analytics} loading={loading} />
+      {activeTab === 'inventory' && (
+        <Box>
+          <KpiCards kpis={analytics.kpis.filter(k => ['Raw Material Stock', 'Total Input Material', 'Finished Stock'].includes(k.label))} loading={loading} />
+          <InventorySection analytics={analytics} inventoryItems={data.inventoryItems} loading={loading} />
+        </Box>
+      )}
 
-      {/* ── Section 5: Dispatch Analytics ── */}
-      <DispatchSection analytics={analytics} loading={loading} />
+      {activeTab === 'financial' && (
+        <Box>
+          <KpiCards kpis={analytics.kpis.filter(k => ['Avg Production Cost', 'Avg Selling Price'].includes(k.label))} loading={loading} />
+          <FinancialSection analytics={analytics} loading={loading} />
+        </Box>
+      )}
 
-      {/* ── Section 6: Quality & Efficiency Analytics ── */}
-      <QualitySection analytics={analytics} loading={loading} />
+      {activeTab === 'dispatch' && (
+        <Box>
+          <KpiCards kpis={analytics.kpis.filter(k => ['Total Dispatch'].includes(k.label))} loading={loading} />
+          <DispatchSection analytics={analytics} loading={loading} />
+        </Box>
+      )}
+
+      {activeTab === 'quality' && (
+        <Box>
+          <KpiCards kpis={analytics.kpis.filter(k => ['Avg Recovery', 'QC Pass Rate'].includes(k.label))} loading={loading} />
+          <QualitySection analytics={analytics} loading={loading} />
+        </Box>
+      )}
 
       {/* Bottom spacer */}
       <Box sx={{ height: 40 }} />

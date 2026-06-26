@@ -8,7 +8,7 @@ import {
     InputLabel, Select, MenuItem, useTheme, useMediaQuery,
 } from '@mui/material';
 import {
-    Search, Plus, Edit, Trash2, RefreshCw, Download,
+    Search, Plus, Edit, Trash2, RefreshCw, Download, ArrowUpDown,
 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -81,6 +81,19 @@ const ProductionLedgerPage = () => {
     const [filterEmployee, setFilterEmployee] = useState('');
     const [filterRole, setFilterRole] = useState('');
 
+    // Sorting states
+    const [sortKey, setSortKey] = useState<string>('serialNo');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+    const handleSort = (key: string) => {
+        if (sortKey === key) {
+            setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortKey(key);
+            setSortDir('asc');
+        }
+    };
+
     // Combine loading states
     const isTableLoading = loading || materialsLoading;
 
@@ -124,7 +137,7 @@ const ProductionLedgerPage = () => {
 
     // ── filtered rows ──
     const filtered = useMemo(() => {
-        return entries.filter((e) => {
+        const list = entries.filter((e) => {
             // 1. Heat No Filter
             if (filterHeatNo) {
                 const hn = e.heatNo.toLowerCase();
@@ -171,7 +184,43 @@ const ProductionLedgerPage = () => {
 
             return true;
         });
-    }, [entries, filterHeatNo, filterStartDate, filterEndDate, filterAlloyType, filterEmployee, filterRole]);
+
+        list.sort((a, b) => {
+            let av: any;
+            let bv: any;
+
+            if (sortKey.startsWith('material_')) {
+                const code = sortKey.replace('material_', '');
+                const matA = a.materials?.find((m) => m.materialCode === code || m.materialId === code);
+                const matB = b.materials?.find((m) => m.materialCode === code || m.materialId === code);
+                av = matA ? matA.weightKg : 0;
+                bv = matB ? matB.weightKg : 0;
+            } else if (sortKey === 'date') {
+                av = a.date instanceof Timestamp ? a.date.seconds : 0;
+                bv = b.date instanceof Timestamp ? b.date.seconds : 0;
+            } else if (sortKey === 'efficiency') {
+                av = a.actualEfficiencyPercentage ?? a.efficiencyPercentage ?? 0;
+                bv = b.actualEfficiencyPercentage ?? b.efficiencyPercentage ?? 0;
+            } else if (sortKey === 'pieces') {
+                av = a.noOfPieces ?? a.totalPieces ?? 0;
+                bv = b.noOfPieces ?? b.totalPieces ?? 0;
+            } else {
+                av = (a as any)[sortKey];
+                bv = (b as any)[sortKey];
+            }
+
+            if (av === undefined || av === null) return 1;
+            if (bv === undefined || bv === null) return -1;
+            if (typeof av === 'string' && typeof bv === 'string') {
+                return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+            }
+            if (av < bv) return sortDir === 'asc' ? -1 : 1;
+            if (av > bv) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return list;
+    }, [entries, filterHeatNo, filterStartDate, filterEndDate, filterAlloyType, filterEmployee, filterRole, sortKey, sortDir]);
 
     const hasActiveFilters = !!(
         filterHeatNo ||
@@ -458,26 +507,129 @@ const ProductionLedgerPage = () => {
                         <TableHead>
                             <TableRow>
                                 {/* Fixed columns */}
-                                <TableCell sx={{ ...stickyHead, minWidth: 55 }}>SI No</TableCell>
-                                <TableCell sx={{ ...stickyHead, minWidth: 110 }}>Heat No</TableCell>
-                                <TableCell sx={{ ...stickyHead, minWidth: 100 }}>Date</TableCell>
-                                <TableCell sx={{ ...stickyHead, minWidth: 90 }}>Alloy Type</TableCell>
-                                <TableCell sx={{ ...stickyHead, minWidth: 85 }}>Furnace No</TableCell>
-                                <TableCell sx={{ ...stickyHead, minWidth: 120 }}>Operator</TableCell>
-                                <TableCell sx={{ ...stickyHead, minWidth: 130 }}>Shift</TableCell>
+                                <TableCell
+                                    sx={{ ...stickyHead, minWidth: 55, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('serialNo')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        SI No
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'serialNo' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'serialNo' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    sx={{ ...stickyHead, minWidth: 110, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('heatNo')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        Heat No
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'heatNo' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'heatNo' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    sx={{ ...stickyHead, minWidth: 100, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('date')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        Date
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'date' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'date' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    sx={{ ...stickyHead, minWidth: 90, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('alloyType')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        Alloy Type
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'alloyType' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'alloyType' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    sx={{ ...stickyHead, minWidth: 85, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('furnaceNo')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        Furnace No
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'furnaceNo' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'furnaceNo' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    sx={{ ...stickyHead, minWidth: 120, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('operatorName')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        Operator
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'operatorName' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'operatorName' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    sx={{ ...stickyHead, minWidth: 130, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('shiftStartTime')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        Shift
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'shiftStartTime' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'shiftStartTime' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
                                 {/* Material columns */}
-                                {productionMaterials.map((f) => (
-                                    <TableCell key={f.id} align="right" sx={{ ...stickyHead, minWidth: 68 }}>
-                                        <Tooltip title={f.materialName} arrow>
-                                            <span>{f.materialCode}</span>
-                                        </Tooltip>
-                                    </TableCell>
-                                ))}
+                                {productionMaterials.map((f) => {
+                                    const mKey = `material_${f.materialCode}`;
+                                    return (
+                                        <TableCell
+                                            key={f.id}
+                                            align="right"
+                                            sx={{ ...stickyHead, minWidth: 68, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                            onClick={() => handleSort(mKey)}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                                                <Tooltip title={f.materialName} arrow>
+                                                    <span>{f.materialCode}</span>
+                                                </Tooltip>
+                                                <ArrowUpDown size={10} style={{ color: sortKey === mKey ? '#1565C0' : '#94a3b8', opacity: sortKey === mKey ? 1 : 0.4 }} />
+                                            </Box>
+                                        </TableCell>
+                                    );
+                                })}
                                 {/* Calculated columns */}
-                                <TableCell align="right" sx={{ ...stickyHead, minWidth: 80, color: '#1565C0' }}>Input</TableCell>
-                                <TableCell align="right" sx={{ ...stickyHead, minWidth: 90, color: '#2e7d32' }}>Good Ingots</TableCell>
-                                <TableCell align="right" sx={{ ...stickyHead, minWidth: 80 }}>Pieces</TableCell>
-                                <TableCell align="right" sx={{ ...stickyHead, minWidth: 85 }}>Actual Eff. %</TableCell>
+                                <TableCell
+                                    align="right"
+                                    sx={{ ...stickyHead, minWidth: 80, color: '#1565C0', cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('totalInput')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                                        Input
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'totalInput' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'totalInput' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    align="right"
+                                    sx={{ ...stickyHead, minWidth: 90, color: '#2e7d32', cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('goodIngots')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                                        Good Ingots
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'goodIngots' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'goodIngots' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    align="right"
+                                    sx={{ ...stickyHead, minWidth: 80, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('pieces')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                                        Pieces
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'pieces' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'pieces' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    align="right"
+                                    sx={{ ...stickyHead, minWidth: 85, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                                    onClick={() => handleSort('efficiency')}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                                        Actual Eff. %
+                                        <ArrowUpDown size={10} style={{ color: sortKey === 'efficiency' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'efficiency' ? 1 : 0.4 }} />
+                                    </Box>
+                                </TableCell>
                                 <TableCell align="center" sx={{ ...stickyHead, minWidth: 80 }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>

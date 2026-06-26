@@ -115,7 +115,95 @@ const buildDateBuckets = (range: DateRange): Map<string, number> => {
 };
 
 // ─── Colors for pie/bar charts ────────────────────────────────────────────────
-const PALETTE = ['#1565C0', '#1976d2', '#42a5f5', '#0d47a1', '#1e88e5', '#64b5f6', '#90caf9', '#bbdefb', '#0288d1', '#039be5'];
+const PALETTE = [
+  '#3b82f6', // Bright Blue
+  '#f59e0b', // Amber
+  '#10b981', // Emerald
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan
+  '#f97316', // Orange
+  '#6366f1', // Indigo
+  '#14b8a6', // Teal
+  '#a855f7', // Purple
+  '#e11d48', // Rose
+  '#84cc16', // Lime
+];
+
+const ALLOY_COLORS: Record<string, string> = {
+  'A6063': '#f59e0b',
+  '6063': '#f59e0b',
+  'A356': '#3b82f6',
+  '356': '#3b82f6',
+  'ADC12': '#ef4444',
+  'LM6': '#10b981',
+  'A6082': '#8b5cf6',
+  '6082': '#8b5cf6',
+};
+
+const MATERIAL_COLORS: Record<string, string> = {
+  'AL': '#2563eb',
+  'ALUMINUM': '#2563eb',
+  'PURE ALUMINUM': '#2563eb',
+  'PURE ALUMINUM INGOTS': '#2563eb',
+  'SI': '#0d9488',
+  'SILICON': '#0d9488',
+  'SILICON METAL': '#0d9488',
+  'MG': '#d97706',
+  'MAGNESIUM': '#d97706',
+  'MAGNESIUM INGOTS': '#d97706',
+  'CU': '#dc2626',
+  'COPPER': '#dc2626',
+  'COPPER SCRAP': '#dc2626',
+  'MN': '#8b5cf6',
+  'MANGANESE': '#8b5cf6',
+  'MANGANESE FLAKES': '#8b5cf6',
+  'TSE': '#f97316',
+  'TENSE': '#f97316',
+  'TENSE SCRAP': '#f97316',
+  'TTR': '#06b6d4',
+  'TABOR': '#06b6d4',
+  'TABOR SCRAP': '#06b6d4',
+  'EXT': '#059669',
+  'EXTRUSION': '#059669',
+  'EXTRUSION SCRAP': '#059669',
+  'TEL': '#e11d48',
+  'TELIC': '#e11d48',
+  'TELIC SCRAP': '#e11d48',
+  'ZIN': '#ec4899',
+  'ZINC': '#ec4899',
+  'ZINC DROSS': '#ec4899',
+  'SCRAP': '#78716c',
+  'SCRAP METAL': '#78716c',
+};
+
+export const getColorForAlloy = (name: string): string => {
+  const clean = name.trim().toUpperCase();
+  for (const [key, color] of Object.entries(ALLOY_COLORS)) {
+    if (clean.includes(key)) return color;
+  }
+  // Deterministic fallback using hash
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % PALETTE.length;
+  return PALETTE[index];
+};
+
+export const getColorForMaterial = (name: string): string => {
+  const clean = name.trim().toUpperCase();
+  for (const [key, color] of Object.entries(MATERIAL_COLORS)) {
+    if (clean === key || clean.includes(key) || key.includes(clean)) return color;
+  }
+  // Deterministic fallback using hash
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % PALETTE.length;
+  return PALETTE[index];
+};
 
 // ─── Main hook ────────────────────────────────────────────────────────────────
 export const useDashboardFilters = (data: DashboardRawData) => {
@@ -250,7 +338,7 @@ export const useDashboardFilters = (data: DashboardRawData) => {
       alloyMap.set(k, (alloyMap.get(k) ?? 0) + (e.goodIngots ?? 0));
     });
     const alloyWiseProduction: NamedValue[] = Array.from(alloyMap.entries())
-      .map(([name, value], i) => ({ name, value: Math.round(value * 10) / 10, color: PALETTE[i % PALETTE.length] }))
+      .map(([name, value]) => ({ name, value: Math.round(value * 10) / 10, color: getColorForAlloy(name) }))
       .sort((a, b) => b.value - a.value);
 
     // Production Hours Trend
@@ -269,7 +357,7 @@ export const useDashboardFilters = (data: DashboardRawData) => {
     // Raw Material Stock
     const rawMaterialStock: NamedValue[] = data.inventoryItems
       .filter((i) => i.currentStockKg > 0)
-      .map((i, idx) => ({ name: i.materialCode || i.materialName, value: i.currentStockKg, color: PALETTE[idx % PALETTE.length] }))
+      .map((i) => ({ name: i.materialCode || i.materialName, value: i.currentStockKg, color: getColorForMaterial(i.materialCode || i.materialName) }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 12);
 
@@ -282,13 +370,13 @@ export const useDashboardFilters = (data: DashboardRawData) => {
       });
     });
     const materialConsumption: NamedValue[] = Array.from(consumptionMap.entries())
-      .map(([name, value], i) => ({ name, value: Math.round(value * 10) / 10, color: PALETTE[i % PALETTE.length] }))
+      .map(([name, value]) => ({ name, value: Math.round(value * 10) / 10, color: getColorForMaterial(name) }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
-    const materialShare: NamedValue[] = materialConsumption.map((m, i) => ({
+    const materialShare: NamedValue[] = materialConsumption.map((m) => ({
       ...m,
-      color: PALETTE[i % PALETTE.length],
+      color: getColorForMaterial(m.name),
     }));
 
     // Cost & Selling Price Trend (grouped by date)
@@ -326,7 +414,7 @@ export const useDashboardFilters = (data: DashboardRawData) => {
       });
     });
     const materialCostDistribution: NamedValue[] = Array.from(matCostMap.entries())
-      .map(([name, value], i) => ({ name, value: Math.round(value), color: PALETTE[i % PALETTE.length] }))
+      .map(([name, value]) => ({ name, value: Math.round(value), color: getColorForMaterial(name) }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
 
@@ -402,9 +490,9 @@ export const useDashboardFilters = (data: DashboardRawData) => {
       if (e.efficiencyPercentage > 0) shiftMap.get(s)!.push(e.efficiencyPercentage);
     });
     const shiftPerformance: NamedValue[] = [
-      { name: 'Morning', value: Math.round(avg(shiftMap.get('Morning') ?? []) * 100) / 100, color: '#1565C0' },
-      { name: 'Afternoon', value: Math.round(avg(shiftMap.get('Afternoon') ?? []) * 100) / 100, color: '#0d47a1' },
-      { name: 'Night', value: Math.round(avg(shiftMap.get('Night') ?? []) * 100) / 100, color: '#1a237e' },
+      { name: 'Morning', value: Math.round(avg(shiftMap.get('Morning') ?? []) * 100) / 100, color: '#f59e0b' },
+      { name: 'Afternoon', value: Math.round(avg(shiftMap.get('Afternoon') ?? []) * 100) / 100, color: '#f97316' },
+      { name: 'Night', value: Math.round(avg(shiftMap.get('Night') ?? []) * 100) / 100, color: '#6366f1' },
     ];
 
     // Loss Analysis (waterfall as simple bar)
@@ -413,10 +501,10 @@ export const useDashboardFilters = (data: DashboardRawData) => {
     const totalFinished = approvedFG.reduce((s, g) => s + (g.goodOutputKg ?? 0), 0);
     const totalDispatchedAll = dispatches.reduce((s, d) => s + (d.totalDispatchWeightKg ?? 0), 0);
     const lossAnalysis: NamedValue[] = [
-      { name: 'Total Input', value: Math.round(totalInputAll), color: '#1565C0' },
-      { name: 'Production Loss', value: Math.round(totalInputAll - totalOutputAll), color: '#c62828' },
-      { name: 'Finished Goods', value: Math.round(totalFinished), color: '#2e7d32' },
-      { name: 'Dispatched', value: Math.round(totalDispatchedAll), color: '#0277bd' },
+      { name: 'Total Input', value: Math.round(totalInputAll), color: '#4f46e5' },
+      { name: 'Production Loss', value: Math.round(totalInputAll - totalOutputAll), color: '#dc2626' },
+      { name: 'Finished Goods', value: Math.round(totalFinished), color: '#10b981' },
+      { name: 'Dispatched', value: Math.round(totalDispatchedAll), color: '#06b6d4' },
     ];
 
     return {

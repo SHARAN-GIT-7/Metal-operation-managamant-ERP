@@ -103,9 +103,14 @@ const HeatHoverDetails = ({ heatNo, productionEntries, costEntries }: HeatHoverD
   // Let's use cost.materials if available, otherwise fallback to prod.materials.
   const materials = cost?.materials || prod.materials || [];
 
-  const totalProductionCost = cost 
-    ? (cost.productionCostPerKg ?? 0) * (cost.goodIngotsKg ?? 0)
+  const totalProductionCost = cost
+    ? (cost.totalProductionCost ?? (cost.totalProductionCostPerKg ?? cost.productionCostPerKg ?? 0) * (cost.goodIngotsKg ?? 0))
     : 0;
+
+  const shiftStr = prod.shiftStartTime 
+    ? `${prod.shiftStartTime} ${prod.shiftStartPeriod ?? ''} – ${prod.shiftEndTime ?? ''} ${prod.shiftEndPeriod ?? ''}`
+    : '—';
+  const piecesVal = prod.totalPieces ?? prod.noOfPieces ?? 0;
 
   return (
     <Box sx={{ p: 1.5, minWidth: 280, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -122,6 +127,21 @@ const HeatHoverDetails = ({ heatNo, productionEntries, costEntries }: HeatHoverD
             Efficiency: {prod.efficiencyPercentage !== undefined ? `${prod.efficiencyPercentage.toFixed(2)}%` : '—'}
           </Typography>
         </Box>
+      </Box>
+
+      {/* Info Rows */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, borderBottom: '1px solid #e2e8f0', pb: 1 }}>
+        {[
+          { label: 'Furnace No', value: prod.furnaceNo },
+          { label: 'Operator',   value: prod.operatorName },
+          { label: 'Shift',      value: shiftStr },
+          { label: 'Pieces',     value: piecesVal > 0 ? `${piecesVal} pcs` : '—' },
+        ].map(({ label, value }) => (
+          <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+            <Typography sx={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 500 }}>{label}</Typography>
+            <Typography sx={{ fontSize: '0.7rem', color: '#1e293b', fontWeight: 700 }}>{value || '—'}</Typography>
+          </Box>
+        ))}
       </Box>
 
       {/* Materials Table */}
@@ -183,6 +203,163 @@ const HeatHoverDetails = ({ heatNo, productionEntries, costEntries }: HeatHoverD
           </Box>
         </Box>
       </Box>
+    </Box>
+  );
+};
+
+// ─── Production Hover Details ─────────────────────────────────────────────────
+interface ProductionHoverDetailsProps {
+  prod: ProductionLedgerEntry;
+}
+
+const ProductionHoverDetails = ({ prod }: ProductionHoverDetailsProps) => {
+  const shiftStr = prod.shiftStartTime 
+    ? `${prod.shiftStartTime} ${prod.shiftStartPeriod ?? ''} – ${prod.shiftEndTime ?? ''} ${prod.shiftEndPeriod ?? ''}`
+    : '—';
+  const piecesVal = prod.totalPieces ?? prod.noOfPieces ?? 0;
+
+  return (
+    <Box sx={{ p: 1.5, minWidth: 280, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      {/* Header */}
+      <Box sx={{ borderBottom: '1px solid #e2e8f0', pb: 1 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', fontSize: '0.85rem' }}>
+          HEAT <span style={{ color: '#1565C0' }}>#{prod.heatNo}</span>
+        </Typography>
+        <Typography sx={{ fontSize: '0.7rem', color: '#64748b', mt: 0.25, fontWeight: 500 }}>
+          Production Ledger Details
+        </Typography>
+      </Box>
+
+      {/* Info rows */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+        {[
+          { label: 'Date',            value: fmtDate(prod.date) },
+          { label: 'Alloy Type',      value: prod.alloyType },
+          { label: 'Furnace No',      value: prod.furnaceNo },
+          { label: 'Operator',        value: prod.operatorName },
+          { label: 'Shift',           value: shiftStr },
+          { label: 'Total Input',     value: fmtKg(prod.totalInput) },
+          { label: 'Good Ingots',     value: fmtKg(prod.goodIngots) },
+          { label: 'Pieces Produced', value: piecesVal > 0 ? `${piecesVal} pcs` : '—' },
+          { label: 'Efficiency',      value: prod.efficiencyPercentage !== undefined ? `${prod.efficiencyPercentage.toFixed(2)}%` : '—' },
+        ].map(({ label, value }) => (
+          <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+            <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</Typography>
+            <Typography sx={{ fontSize: '0.72rem', color: '#1e293b', fontWeight: 700, textAlign: 'right' }}>{value || '—'}</Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Materials breakdown */}
+      {(() => {
+        const activeMaterials = prod.materials?.filter((m) => (m.weightKg ?? 0) > 0) || [];
+        if (activeMaterials.length === 0) return null;
+        return (
+          <Box sx={{ borderTop: '1px solid #e2e8f0', pt: 1 }}>
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.75 }}>
+              Material Consumption
+            </Typography>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>
+                  <th style={{ paddingBottom: 4, fontWeight: 700, color: '#64748b' }}>Material</th>
+                  <th style={{ paddingBottom: 4, textAlign: 'right', fontWeight: 700, color: '#64748b' }}>Weight</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeMaterials.map((m, idx) => (
+                  <tr key={m.materialId || idx} style={{ borderBottom: '1px solid #f8fafc' }}>
+                    <td style={{ paddingTop: 3, paddingBottom: 3, fontWeight: 600, color: '#334155' }}>
+                      {m.materialCode || m.materialName}
+                    </td>
+                    <td style={{ paddingTop: 3, paddingBottom: 3, textAlign: 'right', fontFamily: 'monospace', color: '#475569' }}>
+                      {fmtKg(m.weightKg)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Box>
+        );
+      })()}
+    </Box>
+  );
+};
+
+// ─── Cost Hover Details ───────────────────────────────────────────────────────
+interface CostHoverDetailsProps {
+  cost: CostLedgerEntry;
+}
+
+const CostHoverDetails = ({ cost }: CostHoverDetailsProps) => {
+  return (
+    <Box sx={{ p: 1.5, minWidth: 280, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      {/* Header */}
+      <Box sx={{ borderBottom: '1px solid #e2e8f0', pb: 1 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', fontSize: '0.85rem' }}>
+          HEAT <span style={{ color: '#1565C0' }}>#{cost.heatNo}</span>
+        </Typography>
+        <Typography sx={{ fontSize: '0.7rem', color: '#64748b', mt: 0.25, fontWeight: 500 }}>
+          Cost Ledger Details
+        </Typography>
+      </Box>
+
+      {/* Info rows */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+        {[
+          { label: 'Date',                value: fmtDate(cost.date) },
+          { label: 'Alloy Type',          value: cost.alloyType },
+          { label: 'Total Input',         value: fmtKg(cost.totalInputKg) },
+          { label: 'Good Ingots',         value: fmtKg(cost.goodIngotsKg) },
+          { label: 'Total Material Cost', value: fmtMoney(cost.totalMaterialCost) },
+          { label: 'Material Cost / Kg',  value: cost.materialCostPerKg ? `${fmtMoney(cost.materialCostPerKg)}/kg` : '—' },
+          { label: 'Labor Cost / Kg',     value: cost.laborCostPerKg ? `${fmtMoney(cost.laborCostPerKg)}/kg` : '—' },
+          { label: 'Total Prod. Cost',    value: fmtMoney(cost.totalProductionCost) },
+          { label: 'Prod. Cost / Kg',     value: cost.totalProductionCostPerKg ? `${fmtMoney(cost.totalProductionCostPerKg)}/kg` : (cost.productionCostPerKg ? `${fmtMoney(cost.productionCostPerKg)}/kg` : '—') },
+          { label: 'Margin',              value: cost.marginPercentage !== undefined ? `${cost.marginPercentage}%` : (cost.sellingMarginPercentage !== undefined ? `${cost.sellingMarginPercentage}%` : '—') },
+          { label: 'Selling Price / Kg',  value: cost.sellingPricePerKg ? `${fmtMoney(cost.sellingPricePerKg)}/kg` : '—' },
+        ].map(({ label, value }) => (
+          <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+            <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</Typography>
+            <Typography sx={{ fontSize: '0.72rem', color: '#1e293b', fontWeight: 700, textAlign: 'right' }}>{value || '—'}</Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Materials breakdown */}
+      {cost.materials && cost.materials.length > 0 && (
+        <Box sx={{ borderTop: '1px solid #e2e8f0', pt: 1 }}>
+          <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.75 }}>
+            Cost Breakdown
+          </Typography>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>
+                <th style={{ paddingBottom: 4, fontWeight: 700, color: '#64748b' }}>Material</th>
+                <th style={{ paddingBottom: 4, textAlign: 'right', fontWeight: 700, color: '#64748b' }}>Qty</th>
+                <th style={{ paddingBottom: 4, textAlign: 'right', fontWeight: 700, color: '#64748b' }}>Rate</th>
+                <th style={{ paddingBottom: 4, textAlign: 'right', fontWeight: 700, color: '#64748b' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cost.materials.map((m, idx) => {
+                const qty = m.weightKg ?? 0;
+                const rate = m.ratePerKg ?? (m as any).rate ?? 0;
+                const amt = m.amount ?? (qty * rate);
+                if (qty === 0) return null;
+                return (
+                  <tr key={m.materialId || idx} style={{ borderBottom: '1px solid #f8fafc' }}>
+                    <td style={{ paddingTop: 3, paddingBottom: 3, fontWeight: 600, color: '#334155' }}>{m.materialCode || m.materialName}</td>
+                    <td style={{ paddingTop: 3, paddingBottom: 3, textAlign: 'right', fontFamily: 'monospace', color: '#475569' }}>{qty.toLocaleString()} kg</td>
+                    <td style={{ paddingTop: 3, paddingBottom: 3, textAlign: 'right', fontFamily: 'monospace', color: '#64748b' }}>{rate > 0 ? `₹${rate.toFixed(1)}` : '—'}</td>
+                    <td style={{ paddingTop: 3, paddingBottom: 3, textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, color: '#1e293b' }}>{amt > 0 ? `₹${amt.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </Box>
+      )}
     </Box>
   );
 };
@@ -617,8 +794,40 @@ interface AlloyDetailProps {
 }
 
 const AlloyDetailView = ({ group, isAdmin, onEdit, onBack, productionEntries, costEntries }: AlloyDetailProps) => {
-  const stickyHead = 'bg-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px]';
   const bodyCell = 'px-3 py-2 border-b border-slate-50 text-xs text-slate-700 whitespace-nowrap';
+
+  const [sortKey, setSortKey] = useState<string>('productionDate');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const sortedEntries = useMemo(() => {
+    const arr = [...group.entries];
+    arr.sort((a, b) => {
+      let av: any = (a as any)[sortKey];
+      let bv: any = (b as any)[sortKey];
+      if (sortKey === 'productionDate') {
+        av = a.productionDate instanceof Timestamp ? a.productionDate.seconds : 0;
+        bv = b.productionDate instanceof Timestamp ? b.productionDate.seconds : 0;
+      } else if (sortKey === 'totalProdCost') {
+        av = (a.productionCostPerKg ?? 0) * (a.goodOutputKg ?? 0);
+        bv = (b.productionCostPerKg ?? 0) * (b.goodOutputKg ?? 0);
+      }
+      if (av === undefined || av === null) return 1;
+      if (bv === undefined || bv === null) return -1;
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [group.entries, sortKey, sortDir]);
 
   const totalProdCost = group.entries.reduce(
     (s, e) => s + ((e.productionCostPerKg ?? 0) * (e.goodOutputKg ?? 0)), 0
@@ -626,6 +835,17 @@ const AlloyDetailView = ({ group, isAdmin, onEdit, onBack, productionEntries, co
 
   const totalPieces = group.entries.reduce(
     (s, e) => s + (e.numberOfPieces ?? 0), 0
+  );
+
+  const SortTh = ({ label, colKey, align = 'left' }: { label: string; colKey: string; align?: 'left' | 'right' }) => (
+    <th
+      onClick={() => handleSort(colKey)}
+      className={`px-3 py-2 border-b border-slate-200 cursor-pointer hover:bg-slate-200 transition-colors select-none text-[10px] text-slate-600 font-bold uppercase tracking-wider ${align === 'right' ? 'text-right' : 'text-left'}`}
+    >
+      <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
+        {label} <ArrowUpDown size={10} style={{ color: sortKey === colKey ? THEME_BLUE : '#94a3b8', opacity: sortKey === colKey ? 1 : 0.4 }} />
+      </div>
+    </th>
   );
 
   return (
@@ -666,27 +886,27 @@ const AlloyDetailView = ({ group, isAdmin, onEdit, onBack, productionEntries, co
         <div style={{ height: 3, background: THEME_BLUE }} />
         <div className="overflow-x-auto">
           <table className="min-w-full text-left border-collapse">
-            <thead className={stickyHead}>
-              <tr>
-                <th className="px-3 py-2 border-b border-slate-200 w-10 text-center">S.No</th>
-                <th className="px-3 py-2 border-b border-slate-200">Heat No</th>
-                <th className="px-3 py-2 border-b border-slate-200">Date</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Gross (kg)</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Output (kg)</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Efficiency</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Pieces Produced</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Total Prod. Cost</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Selling Price/kg</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Dispatched Pcs</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Remaining Pcs</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Dispatched Wt (kg)</th>
-                <th className="px-3 py-2 border-b border-slate-200 text-right">Remaining Wt (kg)</th>
-                <th className="px-3 py-2 border-b border-slate-200">Status</th>
-                {isAdmin && <th className="px-3 py-2 border-b border-slate-200 text-center">Actions</th>}
+            <thead>
+              <tr className="bg-slate-100">
+                <th className="px-3 py-2 border-b border-slate-200 w-10 text-center text-[10px] text-slate-600 font-bold uppercase tracking-wider">S.No</th>
+                <SortTh label="Heat No" colKey="heatNo" />
+                <SortTh label="Date" colKey="productionDate" />
+                <SortTh label="Gross (kg)" colKey="grossWeightKg" align="right" />
+                <SortTh label="Output (kg)" colKey="goodOutputKg" align="right" />
+                <SortTh label="Efficiency" colKey="efficiencyPercentage" align="right" />
+                <SortTh label="Pieces Produced" colKey="numberOfPieces" align="right" />
+                <SortTh label="Total Prod. Cost" colKey="totalProdCost" align="right" />
+                <SortTh label="Selling Price/kg" colKey="estimatedSellingPrice" align="right" />
+                <SortTh label="Dispatched Pcs" colKey="dispatchedPieces" align="right" />
+                <SortTh label="Remaining Pcs" colKey="remainingPieces" align="right" />
+                <SortTh label="Dispatched Wt (kg)" colKey="dispatchedWeightKg" align="right" />
+                <SortTh label="Remaining Wt (kg)" colKey="remainingWeightKg" align="right" />
+                <SortTh label="Status" colKey="status" />
+                {isAdmin && <th className="px-3 py-2 border-b border-slate-200 text-center text-[10px] text-slate-600 font-bold uppercase tracking-wider">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {group.entries.map((row, idx) => {
+              {sortedEntries.map((row, idx) => {
                 const isFullyDispatched = row.status === 'Fully Dispatched';
                 const totalProdCostRow = (row.productionCostPerKg ?? 0) * (row.goodOutputKg ?? 0);
                 return (
@@ -819,6 +1039,10 @@ const FinishedGoodsPage = () => {
   const [sortKey, setSortKey] = useState<string>('productionDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  // Sort (Approval Queue view)
+  const [aqSortKey, setAqSortKey] = useState<string>('date');
+  const [aqSortDir, setAqSortDir] = useState<'asc' | 'desc'>('desc');
+
   // Pagination (table view)
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -897,6 +1121,58 @@ const FinishedGoodsPage = () => {
       };
     });
   }, [entries, productionEntries, costEntries, qcEntries]);
+
+  const handleAqSort = (key: string) => {
+    if (aqSortKey === key) {
+      setAqSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setAqSortKey(key);
+      setAqSortDir('asc');
+    }
+  };
+
+  const sortedUnapprovedHeats = useMemo(() => {
+    const arr = [...unapprovedHeats];
+    arr.sort((a, b) => {
+      let av: any;
+      let bv: any;
+      if (aqSortKey === 'heatNo') {
+        av = a.prod.heatNo;
+        bv = b.prod.heatNo;
+      } else if (aqSortKey === 'date') {
+        av = a.prod.date instanceof Timestamp ? a.prod.date.seconds : 0;
+        bv = b.prod.date instanceof Timestamp ? b.prod.date.seconds : 0;
+      } else if (aqSortKey === 'alloyType') {
+        av = a.prod.alloyType;
+        bv = b.prod.alloyType;
+      } else if (aqSortKey === 'totalInput') {
+        av = a.prod.totalInput ?? 0;
+        bv = b.prod.totalInput ?? 0;
+      } else if (aqSortKey === 'goodIngots') {
+        av = a.prod.goodIngots ?? 0;
+        bv = b.prod.goodIngots ?? 0;
+      } else if (aqSortKey === 'efficiencyPercentage') {
+        av = a.prod.efficiencyPercentage ?? 0;
+        bv = b.prod.efficiencyPercentage ?? 0;
+      } else if (aqSortKey === 'isProductionProper') {
+        av = a.isProductionProper ? 1 : 0;
+        bv = b.isProductionProper ? 1 : 0;
+      } else if (aqSortKey === 'isCostProper') {
+        av = a.isCostProper ? 1 : 0;
+        bv = b.isCostProper ? 1 : 0;
+      } else if (aqSortKey === 'isQcProper') {
+        av = a.isQcProper ? 1 : 0;
+        bv = b.isQcProper ? 1 : 0;
+      }
+      
+      if (av === undefined || av === null) return 1;
+      if (bv === undefined || bv === null) return -1;
+      if (av < bv) return aqSortDir === 'asc' ? -1 : 1;
+      if (av > bv) return aqSortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [unapprovedHeats, aqSortKey, aqSortDir]);
 
   // ── Approved Entries (Only explicitly approved via queue, with both prod and cost ledger) ───
   const approvedEntries = useMemo(() => {
@@ -1135,17 +1411,29 @@ const FinishedGoodsPage = () => {
             <table className="min-w-full text-left border-collapse">
               <thead className={`${stickyHead} sticky top-0 z-20 shadow-sm`}>
                 <tr>
-                  <th className="px-3 py-2 border-b border-slate-200 w-12 text-center bg-slate-100">#</th>
-                  <th className="px-3 py-2 border-b border-slate-200 w-32 bg-slate-100">Heat No</th>
-                  <th className="px-3 py-2 border-b border-slate-200 w-32">Date</th>
-                  <th className="px-3 py-2 border-b border-slate-200 w-24">Alloy</th>
-                  <th className="px-3 py-2 border-b border-slate-200 text-right w-28">Gross (kg)</th>
-                  <th className="px-3 py-2 border-b border-slate-200 text-right w-28">Output (kg)</th>
-                  <th className="px-3 py-2 border-b border-slate-200 text-right w-24">Efficiency</th>
-                  <th className="px-3 py-2 border-b border-slate-200 text-center w-40">Production Ledger Proper</th>
-                  <th className="px-3 py-2 border-b border-slate-200 text-center w-40">Cost Ledger Proper</th>
-                  <th className="px-3 py-2 border-b border-slate-200 text-center w-44">QC Report Proper</th>
-                  <th className="px-3 py-2 border-b border-slate-200 text-center w-36">Actions</th>
+                  <th className="px-3 py-2 border-b border-slate-200 w-12 text-center bg-slate-100 text-[10px] text-slate-600 font-bold uppercase tracking-wider">#</th>
+                  {[
+                    { label: 'Heat No', colKey: 'heatNo', align: 'left', width: 'w-32' },
+                    { label: 'Date', colKey: 'date', align: 'left', width: 'w-32' },
+                    { label: 'Alloy', colKey: 'alloyType', align: 'left', width: 'w-24' },
+                    { label: 'Gross (kg)', colKey: 'totalInput', align: 'right', width: 'w-28' },
+                    { label: 'Output (kg)', colKey: 'goodIngots', align: 'right', width: 'w-28' },
+                    { label: 'Efficiency', colKey: 'efficiencyPercentage', align: 'right', width: 'w-24' },
+                    { label: 'Production Ledger Proper', colKey: 'isProductionProper', align: 'center', width: 'w-40' },
+                    { label: 'Cost Ledger Proper', colKey: 'isCostProper', align: 'center', width: 'w-40' },
+                    { label: 'QC Report Proper', colKey: 'isQcProper', align: 'center', width: 'w-44' }
+                  ].map((col) => (
+                    <th
+                      key={col.colKey}
+                      onClick={() => handleAqSort(col.colKey)}
+                      className={`px-3 py-2 border-b border-slate-200 cursor-pointer hover:bg-slate-200 transition-colors select-none text-[10px] text-slate-600 font-bold uppercase tracking-wider ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.width}`}
+                    >
+                      <div className={`flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''}`}>
+                        {col.label} <ArrowUpDown size={10} style={{ color: aqSortKey === col.colKey ? THEME_BLUE : '#94a3b8', opacity: aqSortKey === col.colKey ? 1 : 0.4 }} />
+                      </div>
+                    </th>
+                  ))}
+                  <th className="px-3 py-2 border-b border-slate-200 text-center w-36 text-[10px] text-slate-600 font-bold uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-100 text-xs">
@@ -1157,14 +1445,14 @@ const FinishedGoodsPage = () => {
                       ))}
                     </tr>
                   ))
-                ) : unapprovedHeats.length === 0 ? (
+                ) : sortedUnapprovedHeats.length === 0 ? (
                   <tr>
                     <td colSpan={11} className="px-5 py-12 text-center text-slate-400 font-medium bg-slate-50/50">
                       No heats pending approval. All active heats are approved to Finished Goods!
                     </td>
                   </tr>
                 ) : (
-                  unapprovedHeats.map((row, idx) => {
+                  sortedUnapprovedHeats.map((row, idx) => {
                     const isEven = idx % 2 === 0;
                     const canApprove = row.isProductionProper && row.isCostProper && row.isQcProper;
 
@@ -1219,30 +1507,68 @@ const FinishedGoodsPage = () => {
 
                         {/* Production Ledger Proper */}
                         <td className="px-3 py-2.5 text-center">
-                          <Chip
-                            label="Yes"
-                            size="small"
-                            color="success"
-                            sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20 }}
-                          />
-                        </td>
-
-                        {/* Cost Ledger Proper */}
-                        <td className="px-3 py-2.5 text-center">
-                          {row.isCostProper ? (
+                          <Tooltip
+                            title={<ProductionHoverDetails prod={row.prod} />}
+                            placement="left"
+                            slotProps={{
+                              tooltip: {
+                                sx: {
+                                  bgcolor: '#ffffff',
+                                  color: '#0f172a',
+                                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                                  border: '1px solid #e2e8f0',
+                                  borderRadius: 2,
+                                  p: 0,
+                                  maxWidth: 400,
+                                }
+                              }
+                            }}
+                          >
                             <Chip
                               label="Yes"
                               size="small"
                               color="success"
-                              sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20 }}
+                              sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20, cursor: 'pointer' }}
                             />
+                          </Tooltip>
+                        </td>
+
+                        {/* Cost Ledger Proper */}
+                        <td className="px-3 py-2.5 text-center">
+                          {row.costEntry ? (
+                            <Tooltip
+                              title={<CostHoverDetails cost={row.costEntry} />}
+                              placement="left"
+                              slotProps={{
+                                tooltip: {
+                                  sx: {
+                                    bgcolor: '#ffffff',
+                                    color: '#0f172a',
+                                    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: 2,
+                                    p: 0,
+                                    maxWidth: 400,
+                                  }
+                                }
+                              }}
+                            >
+                              <Chip
+                                label={row.isCostProper ? "Yes" : "Incomplete"}
+                                size="small"
+                                color={row.isCostProper ? "success" : "error"}
+                                sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20, cursor: 'pointer' }}
+                              />
+                            </Tooltip>
                           ) : (
-                            <Chip
-                              label="No"
-                              size="small"
-                              color="error"
-                              sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20 }}
-                            />
+                            <Tooltip title="No Cost Ledger entry found for this heat" placement="top" arrow>
+                              <Chip
+                                label="No"
+                                size="small"
+                                color="error"
+                                sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20, cursor: 'help' }}
+                              />
+                            </Tooltip>
                           )}
                         </td>
 

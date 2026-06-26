@@ -13,6 +13,7 @@ import {
   CheckCircle, AlertTriangle,
   Filter, RefreshCw, Percent, Ban,
   ShieldCheck, ShieldOff, FlaskConical, BarChart3,
+  ArrowUpDown,
 } from 'lucide-react';
 import type { AlloyMaster, AlloyMasterFormData, AlloyStatus } from '../types/alloyMaster.types';
 import { ALLOY_CATEGORIES } from '../types/alloyMaster.types';
@@ -25,6 +26,7 @@ import {
 } from '../services/alloyMaster.service';
 import AlloyDialog from '../components/AlloyDialog';
 import { useAuth } from '../../../context/AuthContext';
+import { Timestamp } from 'firebase/firestore';
 
 // ─── Status Badge ──────────────────────────────────────────────────────────
 const StatusBadge = ({ status }: { status: AlloyStatus }) => {
@@ -105,6 +107,19 @@ const AlloyMasterPage = () => {
   const [filterBIS, setFilterBIS] = useState<'All' | 'Yes' | 'No'>('All');
   const [filterISO, setFilterISO] = useState<'All' | 'Yes' | 'No'>('All');
 
+  // Sorting state
+  const [sortKey, setSortKey] = useState<string>('alloyCode');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
   // Dialogs
   const [addEditOpen, setAddEditOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<AlloyMaster | null>(null);
@@ -125,7 +140,7 @@ const AlloyMasterPage = () => {
 
   // Filtered list
   const filtered = useMemo(() => {
-    return alloys.filter((a) => {
+    const list = alloys.filter((a) => {
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -146,7 +161,29 @@ const AlloyMasterPage = () => {
 
       return matchSearch && matchCat && matchStatus && matchMargin && matchBIS && matchISO;
     });
-  }, [alloys, search, filterCategory, filterStatus, filterMargin, filterBIS, filterISO]);
+
+    list.sort((a, b) => {
+      let av: any = (a as any)[sortKey];
+      let bv: any = (b as any)[sortKey];
+      if (sortKey === 'createdAt') {
+        av = a.createdAt instanceof Timestamp ? a.createdAt.seconds : 0;
+        bv = b.createdAt instanceof Timestamp ? b.createdAt.seconds : 0;
+      } else if (sortKey.startsWith('element_')) {
+        const elName = sortKey.replace('element_', '');
+        const compA = a.chemicalComposition?.find((c) => c.element === elName);
+        const compB = b.chemicalComposition?.find((c) => c.element === elName);
+        av = compA ? compA.min : -1;
+        bv = compB ? compB.min : -1;
+      }
+      if (av === undefined || av === null) return 1;
+      if (bv === undefined || bv === null) return -1;
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [alloys, search, filterCategory, filterStatus, filterMargin, filterBIS, filterISO, sortKey, sortDir]);
 
   // Stats
   const stats = useMemo(() => ({
@@ -386,14 +423,36 @@ const AlloyMasterPage = () => {
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                      {['Code & Color', 'Alloy Name', 'Category', 'Composition', 'Standards', 'Margin %', 'Status', 'Created', 'Actions'].map((h) => (
-                        <TableCell key={h} sx={{
-                          fontSize: '0.6rem', fontWeight: 700, color: '#64748b',
-                          textTransform: 'uppercase', letterSpacing: 0.6,
-                          borderBottom: '1px solid #e2e8f0', py: 1.5, px: 1.5,
-                          whiteSpace: 'nowrap',
-                        }}>
-                          {h}
+                      {[
+                        { label: 'Code & Color', key: 'alloyCode' },
+                        { label: 'Alloy Name', key: 'alloyName' },
+                        { label: 'Category', key: 'alloyCategory' },
+                        { label: 'Composition', key: '' },
+                        { label: 'Standards', key: '' },
+                        { label: 'Margin %', key: 'defaultSellingMarginPercentage' },
+                        { label: 'Status', key: 'status' },
+                        { label: 'Created', key: 'createdAt' },
+                        { label: 'Actions', key: '' }
+                      ].map((col) => (
+                        <TableCell
+                          key={col.label}
+                          onClick={() => col.key && handleSort(col.key)}
+                          sx={{
+                            fontSize: '0.6rem', fontWeight: 700, color: '#64748b',
+                            textTransform: 'uppercase', letterSpacing: 0.6,
+                            borderBottom: '1px solid #e2e8f0', py: 1.5, px: 1.5,
+                            whiteSpace: 'nowrap',
+                            cursor: col.key ? 'pointer' : 'default',
+                            userSelect: 'none',
+                            '&:hover': col.key ? { bgcolor: '#f1f5f9' } : {}
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {col.label}
+                            {col.key && (
+                              <ArrowUpDown size={10} style={{ color: sortKey === col.key ? '#1565C0' : '#94a3b8', opacity: sortKey === col.key ? 1 : 0.4 }} />
+                            )}
+                          </Box>
                         </TableCell>
                       ))}
                     </TableRow>
@@ -618,18 +677,70 @@ const AlloyMasterPage = () => {
               <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={compHeaderStyle}>Alloy Type</TableCell>
-                    {allElements.map((el) => (
-                      <TableCell key={el} sx={{ ...compHeaderStyle, fontFamily: 'monospace' }}>{el} (%)</TableCell>
-                    ))}
-                    <TableCell sx={compHeaderStyle}>Key Properties / Usage Notes</TableCell>
-                    <TableCell sx={compHeaderStyle}>BIS</TableCell>
-                    <TableCell sx={compHeaderStyle}>ISO</TableCell>
-                    <TableCell sx={compHeaderStyle}>Status</TableCell>
+                    <TableCell
+                      sx={{ ...compHeaderStyle, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                      onClick={() => handleSort('alloyName')}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        Alloy Type
+                        <ArrowUpDown size={10} style={{ color: sortKey === 'alloyName' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'alloyName' ? 1 : 0.4 }} />
+                      </Box>
+                    </TableCell>
+                    {allElements.map((el) => {
+                      const elKey = `element_${el}`;
+                      return (
+                        <TableCell
+                          key={el}
+                          sx={{ ...compHeaderStyle, fontFamily: 'monospace', cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                          onClick={() => handleSort(elKey)}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {el} (%)
+                            <ArrowUpDown size={10} style={{ color: sortKey === elKey ? '#1565C0' : '#94a3b8', opacity: sortKey === elKey ? 1 : 0.4 }} />
+                          </Box>
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell
+                      sx={{ ...compHeaderStyle, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                      onClick={() => handleSort('keyProperties')}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        Key Properties / Usage Notes
+                        <ArrowUpDown size={10} style={{ color: sortKey === 'keyProperties' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'keyProperties' ? 1 : 0.4 }} />
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      sx={{ ...compHeaderStyle, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                      onClick={() => handleSort('bisCompliant')}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        BIS
+                        <ArrowUpDown size={10} style={{ color: sortKey === 'bisCompliant' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'bisCompliant' ? 1 : 0.4 }} />
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      sx={{ ...compHeaderStyle, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                      onClick={() => handleSort('isoCompliant')}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        ISO
+                        <ArrowUpDown size={10} style={{ color: sortKey === 'isoCompliant' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'isoCompliant' ? 1 : 0.4 }} />
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      sx={{ ...compHeaderStyle, cursor: 'pointer', userSelect: 'none', '&:hover': { bgcolor: '#f1f5f9' } }}
+                      onClick={() => handleSort('status')}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        Status
+                        <ArrowUpDown size={10} style={{ color: sortKey === 'status' ? '#1565C0' : '#94a3b8', opacity: sortKey === 'status' ? 1 : 0.4 }} />
+                      </Box>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {alloys.map((a, rowIdx) => {
+                  {filtered.map((a, rowIdx) => {
                     const primaryColor = a.displayColors?.primaryColor ?? a.displayColor ?? '#1565C0';
                     const secondaryColor = a.displayColors?.secondaryColor ?? a.secondaryColor ?? '';
                     const elemMap: Record<string, { min: number; max: number }> = {};

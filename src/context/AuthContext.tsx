@@ -9,6 +9,7 @@ import { auth, db } from '../firebase/firebaseConfig';
 
 interface AuthContextType {
   user: User | null;
+  profile: { name: string; role: string } | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role: string) => Promise<void>;
@@ -19,12 +20,39 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<{ name: string; role: string } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Listen to auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        try {
+          const { getDoc } = await import('firebase/firestore');
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setProfile({
+              name: data.name || currentUser.displayName || 'Admin User',
+              role: data.role || 'Plant Manager',
+            });
+          } else {
+            setProfile({
+              name: currentUser.displayName || 'Admin User',
+              role: 'Plant Manager',
+            });
+          }
+        } catch (err) {
+          console.error("Failed to load user profile", err);
+          setProfile({
+            name: currentUser.displayName || 'Admin User',
+            role: 'Plant Manager',
+          });
+        }
+      } else {
+        setProfile(null);
+      }
       setLoading(false);
     });
 
@@ -81,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

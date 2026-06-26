@@ -38,8 +38,10 @@ const MainLayout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          p: { xs: 2, md: 3 }, // reduced padding on mobile for extra space
+          width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          maxWidth: '100%',
+          overflowX: 'hidden',
           mt: 8 // Margin top to account for the fixed Navbar
         }}
       >

@@ -12,7 +12,7 @@ import {
   Plus, Search, Edit2, Trash2, Eye, Building2,
   CheckCircle, XCircle, AlertTriangle, Users,
   ShoppingCart, Handshake, Filter, RefreshCw,
-  MoreVertical, Ban,
+  MoreVertical, Ban, ArrowUpDown,
 } from 'lucide-react';
 import type { VendorMaster, VendorMasterFormData, VendorCategory, VendorStatus } from '../types/vendorMaster.types';
 import {
@@ -25,6 +25,7 @@ import {
 import VendorDialog from '../components/VendorDialog';
 import VendorViewDialog from '../components/VendorViewDialog';
 import { useAuth } from '../../../context/AuthContext';
+import { Timestamp } from 'firebase/firestore';
 
 // ─── Category Badge ───────────────────────────────────────────
 const CategoryBadge = ({ category }: { category: VendorCategory }) => {
@@ -79,6 +80,19 @@ const VendorMasterPage = () => {
   const [filterStatus, setFilterStatus] = useState<VendorStatus | 'All'>('All');
   const [filterGST, setFilterGST] = useState<'All' | 'Registered' | 'Unregistered'>('All');
 
+  // Sorting states
+  const [sortKey, setSortKey] = useState<string>('vendorCode');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
   // Dialogs
   const [addEditOpen, setAddEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -98,7 +112,7 @@ const VendorMasterPage = () => {
 
   // Filtered list
   const filtered = useMemo(() => {
-    return vendors.filter((v) => {
+    const list = vendors.filter((v) => {
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -119,7 +133,33 @@ const VendorMasterPage = () => {
 
       return matchSearch && matchCat && matchStatus && matchGST;
     });
-  }, [vendors, search, filterCategory, filterStatus, filterGST]);
+
+    list.sort((a, b) => {
+      let av: any;
+      let bv: any;
+      if (sortKey === 'createdAt') {
+        av = a.createdAt instanceof Timestamp ? a.createdAt.seconds : 0;
+        bv = b.createdAt instanceof Timestamp ? b.createdAt.seconds : 0;
+      } else if (sortKey === 'state') {
+        av = a.companyAddress?.state || '';
+        bv = b.companyAddress?.state || '';
+      } else {
+        av = (a as any)[sortKey];
+        bv = (b as any)[sortKey];
+      }
+
+      if (av === undefined || av === null) return 1;
+      if (bv === undefined || bv === null) return -1;
+      if (typeof av === 'string' && typeof bv === 'string') {
+        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [vendors, search, filterCategory, filterStatus, filterGST, sortKey, sortDir]);
 
   // Stats
   const stats = useMemo(() => ({
@@ -347,14 +387,39 @@ const VendorMasterPage = () => {
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                  {['Code', 'Vendor Name', 'Category', 'Type', 'GST No.', 'PAN No.', 'Contact', 'Email', 'State', 'Status', 'Created', 'Actions'].map((h) => (
-                    <TableCell key={h} sx={{
-                      fontSize: '0.62rem', fontWeight: 700, color: '#64748b',
-                      textTransform: 'uppercase', letterSpacing: 0.6,
-                      borderBottom: '1px solid #e2e8f0', py: 1.5, px: 1.5,
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {h}
+                  {[
+                    { label: 'Code', key: 'vendorCode' },
+                    { label: 'Vendor Name', key: 'vendorName' },
+                    { label: 'Category', key: 'vendorCategory' },
+                    { label: 'Type', key: 'vendorType' },
+                    { label: 'GST No.', key: 'gstNumber' },
+                    { label: 'PAN No.', key: 'panNumber' },
+                    { label: 'Contact', key: 'contactNumber' },
+                    { label: 'Email', key: 'email' },
+                    { label: 'State', key: 'state' },
+                    { label: 'Status', key: 'status' },
+                    { label: 'Created', key: 'createdAt' },
+                    { label: 'Actions', key: '' }
+                  ].map((col) => (
+                    <TableCell
+                      key={col.label}
+                      onClick={() => col.key && handleSort(col.key)}
+                      sx={{
+                        fontSize: '0.62rem', fontWeight: 700, color: '#64748b',
+                        textTransform: 'uppercase', letterSpacing: 0.6,
+                        borderBottom: '1px solid #e2e8f0', py: 1.5, px: 1.5,
+                        whiteSpace: 'nowrap',
+                        cursor: col.key ? 'pointer' : 'default',
+                        userSelect: 'none',
+                        '&:hover': col.key ? { bgcolor: '#f1f5f9' } : {},
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        {col.label}
+                        {col.key && (
+                          <ArrowUpDown size={10} style={{ color: sortKey === col.key ? '#1565C0' : '#94a3b8', opacity: sortKey === col.key ? 1 : 0.4 }} />
+                        )}
+                      </Box>
                     </TableCell>
                   ))}
                 </TableRow>

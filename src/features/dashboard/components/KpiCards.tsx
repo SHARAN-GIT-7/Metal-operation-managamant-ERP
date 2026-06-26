@@ -109,7 +109,7 @@ interface Props {
 }
 
 const KpiCards = ({ kpis, loading }: Props) => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
     {kpis.map((kpi) => (
       <KpiCard key={kpi.label} kpi={kpi} loading={loading} />
     ))}

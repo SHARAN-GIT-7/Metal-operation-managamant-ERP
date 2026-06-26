@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -37,7 +37,7 @@ export const LoginPage = () => {
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? 'Login failed. Please check your credentials.');
+      setError('Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export const LoginPage = () => {
       >
         {/* Top Branding Logo */}
         <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <img src="/logo.png" alt="SJMW Logo" style={{ height: 40, width: 40, objectFit: 'contain' }} />
+          <img src="/logo.png" alt="SJMW Logo" style={{ height: 40, width: 40, objectFit: 'contain', borderRadius:'20px' }} />
           <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.25rem', letterSpacing: 0.5 }}>
             Sri Jothi Moulding Works ERP
           </Typography>
@@ -229,20 +229,7 @@ export const LoginPage = () => {
             </Box>
           </form>
 
-          {/* Footer Link */}
-          <Typography sx={{ mt: 4, textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              style={{
-                color: '#6366f1',
-                textDecoration: 'none',
-                fontWeight: 700,
-              }}
-            >
-              Sign up
-            </Link>
-          </Typography>
+          
         </Box>
       </Box>
     </Box>

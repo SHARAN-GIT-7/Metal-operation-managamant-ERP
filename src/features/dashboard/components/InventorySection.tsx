@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import ChartCard from './ChartCard';
 import type { DashboardAnalytics } from '../types/dashboard.types';
-import type { InventoryItem } from '../../warehouse/types/warehouse.types';
+import type { InventoryItem, StockStatus } from '../../warehouse/types/warehouse.types';
 
 interface Props {
   analytics: DashboardAnalytics;
@@ -13,7 +13,10 @@ interface Props {
   loading: boolean;
 }
 
-const BLUE = '#1565C0';
+const STOCK_AMBER = '#f59e0b';
+const CONSUME_TEAL = '#0d9488';
+const SHARE_PURPLE = '#8b5cf6';
+
 const axisStyle = { fontSize: '0.65rem', fill: '#94a3b8', fontWeight: 600 };
 const tooltipStyle = {
   contentStyle: { fontSize: '0.72rem', borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' },
@@ -35,22 +38,34 @@ const StockStatusChip = ({ status }: { status: string }) => {
   );
 };
 
+const computeStatus = (current: number, minimum: number): StockStatus => {
+  if (current <= 0) return 'Out Of Stock';
+  if (current < minimum * 0.5) return 'Critical Stock';
+  if (current < minimum) return 'Low Stock';
+  return 'Healthy';
+};
+
 const InventorySection = ({ analytics, inventoryItems, loading }: Props) => {
-  const lowStock = inventoryItems.filter((i) => i.status === 'Low Stock' || i.status === 'Critical Stock' || i.status === 'Out Of Stock');
-  const healthyCount = inventoryItems.filter((i) => i.status === 'Healthy').length;
-  const criticalCount = inventoryItems.filter((i) => i.status === 'Critical Stock' || i.status === 'Out Of Stock').length;
+  const enrichedItems = inventoryItems.map((item) => ({
+    ...item,
+    status: computeStatus(item.currentStockKg ?? 0, item.minimumStockKg ?? 0),
+  }));
+
+  const lowStock = enrichedItems.filter((i) => i.status === 'Low Stock' || i.status === 'Critical Stock' || i.status === 'Out Of Stock' || (i.currentStockKg ?? 0) <= 0);
+  const healthyCount = enrichedItems.filter((i) => i.status === 'Healthy' && (i.currentStockKg ?? 0) > 0).length;
+  const criticalCount = enrichedItems.filter((i) => i.status === 'Critical Stock' || i.status === 'Out Of Stock' || (i.currentStockKg ?? 0) <= 0).length;
 
   return (
     <div>
       <div className="flex items-center gap-2 mb-3 mt-6">
-        <div className="w-1 h-5 rounded-full" style={{ background: '#0277bd' }} />
+        <div className="w-1 h-5 rounded-full" style={{ background: STOCK_AMBER }} />
         <span className="text-sm font-black text-slate-700 uppercase tracking-wider">Inventory Analytics</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* 1. Raw Material Stock */}
-        <ChartCard title="Raw Material Stock" subtitle="Current stock per material (kg)" loading={loading} empty={analytics.rawMaterialStock.length === 0} accentColor="#0277bd">
+        <ChartCard title="Raw Material Stock" subtitle="Current stock per material (kg)" loading={loading} empty={analytics.rawMaterialStock.length === 0} accentColor={STOCK_AMBER}>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart layout="vertical" data={analytics.rawMaterialStock} margin={{ top: 8, right: 20, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
@@ -59,7 +74,7 @@ const InventorySection = ({ analytics, inventoryItems, loading }: Props) => {
               <Tooltip {...tooltipStyle} formatter={(v: any) => [`${Number(v).toLocaleString('en-IN')} kg`, 'Current Stock']} />
               <Bar dataKey="value" radius={[0, 3, 3, 0]}>
                 {analytics.rawMaterialStock.map((entry, idx) => (
-                  <Cell key={idx} fill={entry.color || BLUE} />
+                  <Cell key={idx} fill={entry.color || STOCK_AMBER} />
                 ))}
               </Bar>
             </BarChart>
@@ -67,7 +82,7 @@ const InventorySection = ({ analytics, inventoryItems, loading }: Props) => {
         </ChartCard>
 
         {/* 2. Material Consumption */}
-        <ChartCard title="Material Consumption" subtitle="Materials used in production (kg)" loading={loading} empty={analytics.materialConsumption.length === 0} accentColor="#0288d1">
+        <ChartCard title="Material Consumption" subtitle="Materials used in production (kg)" loading={loading} empty={analytics.materialConsumption.length === 0} accentColor={CONSUME_TEAL}>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={analytics.materialConsumption} margin={{ top: 8, right: 16, left: 0, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -76,7 +91,7 @@ const InventorySection = ({ analytics, inventoryItems, loading }: Props) => {
               <Tooltip {...tooltipStyle} formatter={(v: any) => [`${Number(v).toLocaleString('en-IN')} kg`, 'Consumed']} />
               <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                 {analytics.materialConsumption.map((entry, idx) => (
-                  <Cell key={idx} fill={entry.color || BLUE} />
+                  <Cell key={idx} fill={entry.color || CONSUME_TEAL} />
                 ))}
               </Bar>
             </BarChart>
@@ -84,7 +99,7 @@ const InventorySection = ({ analytics, inventoryItems, loading }: Props) => {
         </ChartCard>
 
         {/* 3. Material Share Pie */}
-        <ChartCard title="Material Share" subtitle="% contribution of each material to production" loading={loading} empty={analytics.materialShare.length === 0} accentColor="#039be5">
+        <ChartCard title="Material Share" subtitle="% contribution of each material to production" loading={loading} empty={analytics.materialShare.length === 0} accentColor={SHARE_PURPLE}>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
@@ -100,7 +115,7 @@ const InventorySection = ({ analytics, inventoryItems, loading }: Props) => {
                 labelLine={false}
               >
                 {analytics.materialShare.map((entry, idx) => (
-                  <Cell key={idx} fill={entry.color || BLUE} />
+                  <Cell key={idx} fill={entry.color || SHARE_PURPLE} />
                 ))}
               </Pie>
               <Tooltip {...tooltipStyle} formatter={(v: any, name: any) => [
@@ -122,7 +137,7 @@ const InventorySection = ({ analytics, inventoryItems, loading }: Props) => {
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
                 <Chip label={`${healthyCount} Healthy`} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, bgcolor: '#dcfce7', color: '#15803d', height: 22, border: '1px solid #86efac' }} icon={<CheckCircle2 size={10} style={{ color: '#15803d' }} />} />
                 {criticalCount > 0 && (
-                  <Chip label={`${criticalCount} Critical`} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, bgcolor: '#fee2e2', color: '#dc2626', height: 22, border: '1px solid #fca5a5' }} icon={<AlertTriangle size={10} style={{ color: '#dc2626' }} />} />
+                   <Chip label={`${criticalCount} Critical`} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, bgcolor: '#fee2e2', color: '#dc2626', height: 22, border: '1px solid #fca5a5' }} icon={<AlertTriangle size={10} style={{ color: '#dc2626' }} />} />
                 )}
               </Box>
 

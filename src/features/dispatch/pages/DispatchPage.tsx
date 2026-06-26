@@ -114,8 +114,8 @@ const HeatHoverPopup = ({
 
   const materials = cost?.materials || prod.materials || [];
 
-  const totalProductionCost = cost 
-    ? (cost.productionCostPerKg ?? 0) * (cost.goodIngotsKg ?? 0)
+  const totalProductionCost = cost
+    ? (cost.totalProductionCost ?? (cost.totalProductionCostPerKg ?? cost.productionCostPerKg ?? 0) * (cost.goodIngotsKg ?? 0))
     : 0;
 
   return (

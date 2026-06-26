@@ -2,7 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { LoginPage } from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
+import NotFoundPage from '../pages/NotFoundPage';
 import DashboardPage from '../features/dashboard/pages/DashboardPage';
 import ProductionLedgerPage from '../features/productionLedger/pages/ProductionLedgerPage';
 import CostLedgerPage from '../features/costLedger/pages/CostLedgerPage';
@@ -24,10 +24,6 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
-  },
-  {
-    path: '/register',
-    element: <RegisterPage />,
   },
   {
     // All app routes are protected
@@ -84,5 +80,9 @@ export const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    path: '*',
+    element: <NotFoundPage />,
   },
 ]);
