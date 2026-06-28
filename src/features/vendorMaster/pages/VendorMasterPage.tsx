@@ -12,7 +12,7 @@ import {
   Plus, Search, Edit2, Trash2, Eye, Building2,
   CheckCircle, XCircle, AlertTriangle, Users,
   ShoppingCart, Handshake, Filter, RefreshCw,
-  MoreVertical, Ban, ArrowUpDown,
+  MoreVertical, Ban, ArrowUpDown, Maximize2, Minimize2,
 } from 'lucide-react';
 import type { VendorMaster, VendorMasterFormData, VendorCategory, VendorStatus } from '../types/vendorMaster.types';
 import {
@@ -66,11 +66,13 @@ const StatusBadge = ({ status }: { status: VendorStatus }) => {
   );
 };
 
-// ─── Main Page ────────────────────────────────────────────────
-const VendorMasterPage = () => {
+// ─── Main Page ───────────────────────────────────────────────────────────
+const VendorMasterPage = ({ noDelete = false }: { noDelete?: boolean }) => {
   const { user } = useAuth();
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [tableMaximized, setTableMaximized] = useState(false);
   const [vendors, setVendors] = useState<VendorMaster[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -364,7 +366,50 @@ const VendorMasterPage = () => {
       </Card>
 
       {/* ── Main Table ── */}
-      <Card sx={{ borderRadius: 2.5, boxShadow: '0 1px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+      {tableMaximized && (
+        <Box
+          onClick={() => setTableMaximized(false)}
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            bgcolor: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 1290,
+          }}
+        />
+      )}
+
+      <Card 
+        sx={{ 
+          borderRadius: 2.5, 
+          boxShadow: '0 1px 8px rgba(0,0,0,0.06)', 
+          overflow: 'hidden',
+          transition: 'all 0.2s ease',
+          ...(tableMaximized && {
+            position: 'fixed',
+            top: '5vh',
+            left: '5vw',
+            width: '90vw',
+            height: '90vh',
+            zIndex: 1300,
+            borderRadius: 3,
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            bgcolor: 'background.paper',
+          })
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', bgcolor: isDark ? '#1a2130' : '#f8fafc' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {tableMaximized ? 'Vendor Directory (Expanded View)' : 'Vendor Directory'}
+          </Typography>
+          <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+            <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+              {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </IconButton>
+          </Tooltip>
+        </Box>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
             <CircularProgress size={32} />
@@ -383,7 +428,7 @@ const VendorMasterPage = () => {
             )}
           </Box>
         ) : (
-          <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+          <TableContainer sx={{ overflowX: 'auto', width: '100%', maxHeight: tableMaximized ? 'calc(90vh - 120px)' : 'none' }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f8fafc' }}>
@@ -561,11 +606,13 @@ const VendorMasterPage = () => {
                             </IconButton>
                           </Tooltip>
                         )}
-                        <Tooltip title="Delete Vendor">
-                          <IconButton size="small" onClick={() => setDeleteConfirm(v)} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fef2f2' } }}>
-                            <Trash2 size={14} />
-                          </IconButton>
-                        </Tooltip>
+                        {!noDelete && (
+                          <Tooltip title="Delete Vendor">
+                            <IconButton size="small" onClick={() => setDeleteConfirm(v)} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fef2f2' } }}>
+                              <Trash2 size={14} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </Box>
                     </TableCell>
                   </TableRow>

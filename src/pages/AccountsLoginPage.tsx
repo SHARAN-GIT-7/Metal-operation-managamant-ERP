@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -10,34 +10,33 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, BarChart3 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export const LoginPage = () => {
-  const { login } = useAuth();
+export const AccountsLoginPage = () => {
+  const { loginAsAccountsManager } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [infoMessage, setInfoMessage] = useState<string | null>(
-    location.state?.message || null
-  );
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setInfoMessage(null);
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/dashboard', { replace: true });
+      await loginAsAccountsManager(email, password);
+      navigate('/accounts/finished-goods', { replace: true });
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Login failed. Please check your credentials.');
+      if (err.message?.includes('Access Denied')) {
+        setError(err.message);
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -51,7 +50,7 @@ export const LoginPage = () => {
         bgcolor: '#ffffff',
       }}
     >
-      {/* Left branding panel with background image */}
+      {/* Left branding panel */}
       <Box
         sx={{
           display: { xs: 'none', md: 'flex' },
@@ -60,45 +59,68 @@ export const LoginPage = () => {
           justifyContent: 'space-between',
           p: 6,
           position: 'relative',
-          backgroundImage: 'url(/login_bg.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          background: 'linear-gradient(135deg, #064e3b 0%, #065f46 35%, #047857 70%, #059669 100%)',
+          overflow: 'hidden',
           '&::before': {
             content: '""',
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(to bottom, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.8) 100%)',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           },
         }}
       >
-        {/* Top Branding Logo */}
+        {/* Decorative circles */}
+        <Box sx={{
+          position: 'absolute', top: -80, right: -80, width: 300, height: 300,
+          borderRadius: '50%', background: 'rgba(255,255,255,0.06)',
+        }} />
+        <Box sx={{
+          position: 'absolute', bottom: -40, left: -60, width: 220, height: 220,
+          borderRadius: '50%', background: 'rgba(255,255,255,0.04)',
+        }} />
+
+        {/* Top Branding */}
         <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <img src="/logo.png" alt="SJMW Logo" style={{ height: 40, width: 40, objectFit: 'contain', borderRadius:'20px' }} />
+          <img src="/logo.png" alt="SJMW Logo" style={{ height: 40, width: 40, objectFit: 'contain', borderRadius: '20px' }} />
           <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.25rem', letterSpacing: 0.5 }}>
             Sri Jothi Moulding Works ERP
           </Typography>
         </Box>
 
-        {/* Bottom Testimonial */}
-        <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 500 }}>
-          <Typography
-            variant="h4"
-            sx={{
-              color: '#fff',
-              fontWeight: 700,
-              lineHeight: 1.3,
-              mb: 2,
-              letterSpacing: -0.5,
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            }}
-          >
-            "The ultimate platform for moulding works and foundry operation management."
-          </Typography>
-          <Box>
-            <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem' }}>
-               By Procomet
+        {/* Center badge */}
+        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <Box sx={{
+            p: 3, bgcolor: 'rgba(255,255,255,0.12)', borderRadius: 4,
+            border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+          }}>
+            <BarChart3 size={48} color="#6ee7b7" />
+            <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', textAlign: 'center', letterSpacing: -0.5 }}>
+              Accounts Manager
+            </Typography>
+            <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.85rem', textAlign: 'center', maxWidth: 280 }}>
+              Secure access to financial records, vendor data, dispatch history, and stock visibility.
             </Typography>
           </Box>
+
+          {/* Module access chips */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', maxWidth: 320 }}>
+            {['Finished Goods (View)', 'Dispatch (View)', 'Vendor Master (Edit)', 'Warehouse (View)'].map((m) => (
+              <Box key={m} sx={{
+                px: 1.5, py: 0.5, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 20,
+                border: '1px solid rgba(255,255,255,0.2)',
+              }}>
+                <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{m}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Bottom */}
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem' }}>
+            By Procomet Solutions · Accounts Portal v1.0
+          </Typography>
         </Box>
       </Box>
 
@@ -115,7 +137,7 @@ export const LoginPage = () => {
         }}
       >
         <Box sx={{ width: '100%', maxWidth: 400 }}>
-          {/* Mobile Logo Header */}
+          {/* Mobile Logo */}
           <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1.5, mb: 5 }}>
             <img src="/logo.png" alt="SJMW Logo" style={{ height: 36, width: 36, objectFit: 'contain' }} />
             <Typography sx={{ color: '#0f172a', fontWeight: 850, fontSize: '1.15rem' }}>
@@ -123,34 +145,40 @@ export const LoginPage = () => {
             </Typography>
           </Box>
 
+          {/* Portal badge */}
+          <Box sx={{
+            display: 'inline-flex', alignItems: 'center', gap: 1,
+            px: 2, py: 0.75, bgcolor: '#ecfdf5', border: '1px solid #a7f3d0',
+            borderRadius: 20, mb: 3,
+          }}>
+            <BarChart3 size={14} color="#059669" />
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#065f46', letterSpacing: 0.3 }}>
+              ACCOUNTS MANAGER PORTAL
+            </Typography>
+          </Box>
+
           {/* Heading */}
           <Typography variant="h4" sx={{ color: '#0f172a', fontWeight: 800, mb: 1, letterSpacing: -0.5 }}>
-            Welcome to Sri Jothi Moulding Works ERP
+            Welcome back
           </Typography>
           <Typography sx={{ color: '#64748b', fontSize: '0.875rem', mb: 4, lineHeight: 1.5 }}>
-            Streamlining moulding works operations, chemical analysis, and cost ledgers.
+            Sign in to your Accounts Manager account to access financial records and reports.
           </Typography>
 
-          {/* Alerts */}
+          {/* Alert */}
           {error && (
             <Alert severity="error" sx={{ mb: 3, borderRadius: 2, fontSize: '0.8rem' }}>
               {error}
             </Alert>
           )}
 
-          {infoMessage && (
-            <Alert severity="info" sx={{ mb: 3, borderRadius: 2, fontSize: '0.85rem' }}>
-              {infoMessage}
-            </Alert>
-          )}
-
           <form onSubmit={handleSubmit} noValidate>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               <TextField
-                id="login-email"
+                id="accounts-login-email"
                 label="Email"
                 type="email"
-                placeholder="alex.jordan@gmail.com"
+                placeholder="accounts@company.com"
                 fullWidth
                 required
                 value={email}
@@ -168,7 +196,7 @@ export const LoginPage = () => {
               />
 
               <TextField
-                id="login-password"
+                id="accounts-login-password"
                 label="Password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••••••"
@@ -201,7 +229,7 @@ export const LoginPage = () => {
               />
 
               <Button
-                id="login-submit"
+                id="accounts-login-submit"
                 type="submit"
                 fullWidth
                 disabled={loading}
@@ -212,24 +240,35 @@ export const LoginPage = () => {
                   fontSize: '0.9rem',
                   borderRadius: 2.5,
                   textTransform: 'none',
-                  background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                   color: '#fff',
-                  boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
+                  boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)',
                   transition: 'all 0.2s ease',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
-                    boxShadow: '0 6px 20px rgba(99, 102, 241, 0.55)',
+                    background: 'linear-gradient(135deg, #047857 0%, #065f46 100%)',
+                    boxShadow: '0 6px 20px rgba(5, 150, 105, 0.5)',
                     transform: 'translateY(-1px)',
                   },
                   '&:disabled': { opacity: 0.6 },
                 }}
               >
-                {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Log in'}
+                {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Sign In'}
               </Button>
             </Box>
           </form>
 
-          
+          {/* Admin portal link */}
+          <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              Are you an administrator?{' '}
+              <a
+                href="/login"
+                style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}
+              >
+                Go to Admin Portal →
+              </a>
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Box>
@@ -243,10 +282,12 @@ const fieldSx = {
     backgroundColor: '#ffffff',
     '& fieldset': { borderColor: '#e2e8f0' },
     '&:hover fieldset': { borderColor: '#cbd5e1' },
-    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: 2 },
+    '&.Mui-focused fieldset': { borderColor: '#059669', borderWidth: 2 },
   },
   '& .MuiInputLabel-root': {
     color: '#94a3b8',
-    '&.Mui-focused': { color: '#6366f1' },
+    '&.Mui-focused': { color: '#059669' },
   },
 };
+
+export default AccountsLoginPage;

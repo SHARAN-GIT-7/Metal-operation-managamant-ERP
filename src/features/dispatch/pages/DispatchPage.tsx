@@ -9,7 +9,7 @@ import {
   Truck, Plus, Edit2, Trash2, RefreshCw, Search,
   ChevronLeft, ChevronRight, ArrowUpDown, Package,
   User, Car, FileText, X, AlertTriangle, Weight,
-  Hash, Building2,
+  Hash, Building2, Maximize2, Minimize2,
 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
@@ -643,8 +643,11 @@ const KpiCard = ({ icon, label, value, sub, color }: { icon: React.ReactNode; la
 );
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function DispatchPage() {
+export default function DispatchPage({ readOnly = false }: { readOnly?: boolean }) {
   const { user } = useAuth();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const [tableMaximized, setTableMaximized] = useState(false);
 
   // Data
   const [dispatches, setDispatches] = useState<DispatchEntry[]>([]);
@@ -801,6 +804,17 @@ export default function DispatchPage() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: '#f8fafc', minHeight: '100vh' }}>
+      <style>{`
+        .dispatch-grid-table th,
+        .dispatch-grid-table td {
+          border-bottom: 1px solid ${isDark ? '#4a5568' : '#cbd5e1'} !important;
+          border-right: 1px solid ${isDark ? '#4a5568' : '#cbd5e1'} !important;
+        }
+        .dispatch-grid-table th:last-child,
+        .dispatch-grid-table td:last-child {
+          border-right: none !important;
+        }
+      `}</style>
       {/* Toast */}
       {toast && (
         <Box sx={{
@@ -835,14 +849,16 @@ export default function DispatchPage() {
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </IconButton>
           </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<Plus size={16} />}
-            onClick={() => { setEditTarget(null); setDialogOpen(true); }}
-            sx={{ bgcolor: THEME, borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 2.5, flexGrow: { xs: 1, sm: 0 } }}
-          >
-            New Dispatch
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="contained"
+              startIcon={<Plus size={16} />}
+              onClick={() => { setEditTarget(null); setDialogOpen(true); }}
+              sx={{ bgcolor: THEME, borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 2.5, flexGrow: { xs: 1, sm: 0 } }}
+            >
+              New Dispatch
+            </Button>
+          )}
         </Box>
       </Box>
 
@@ -901,8 +917,51 @@ export default function DispatchPage() {
         </CardContent>
       </Card>
 
+      {tableMaximized && (
+        <div
+          onClick={() => setTableMaximized(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 1290,
+          }}
+        />
+      )}
+
       {/* Table */}
-      <Card elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
+      <Card 
+        elevation={0} 
+        sx={{ 
+          border: '1px solid #e2e8f0', 
+          borderRadius: 2.5,
+          transition: 'all 0.2s ease',
+          ...(tableMaximized && {
+            position: 'fixed',
+            top: '5vh',
+            left: '5vw',
+            width: '90vw',
+            height: '90vh',
+            zIndex: 1300,
+            borderRadius: 3,
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            bgcolor: 'background.paper',
+          })
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', bgcolor: isDark ? '#1a2130' : '#f8fafc' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {tableMaximized ? 'Dispatch Records (Expanded View)' : 'Dispatch Records'}
+          </Typography>
+          <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+            <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+              {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </IconButton>
+          </Tooltip>
+        </Box>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
             <CircularProgress size={28} sx={{ color: THEME }} />
@@ -922,8 +981,8 @@ export default function DispatchPage() {
             </Button>
           </Box>
         ) : (
-          <Box sx={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+          <Box sx={{ overflowX: 'auto', maxHeight: tableMaximized ? 'calc(90vh - 120px)' : 'none' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }} className="dispatch-grid-table">
               <thead>
                 <tr style={{ backgroundColor: '#f8fafc', position: 'sticky', top: 0, zIndex: 10 }}>
                   <th rowSpan={2} style={{
@@ -1104,20 +1163,22 @@ export default function DispatchPage() {
                             <Typography sx={{ fontSize: '0.72rem', color: '#64748b' }}>{d.driverName || '—'}</Typography>
                           </Box>
                         </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', verticalAlign: 'middle' }}>
-                          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                            <Tooltip title="Edit">
-                              <IconButton size="small" onClick={() => openEdit(d)} sx={{ color: THEME, '&:hover': { bgcolor: '#eff6ff' } }}>
-                                <Edit2 size={14} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete">
-                              <IconButton size="small" onClick={() => setDeleteTarget(d)} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fef2f2' } }}>
-                                <Trash2 size={14} />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </td>
+                        {!readOnly && (
+                          <td style={{ padding: '10px 14px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', verticalAlign: 'middle' }}>
+                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                              <Tooltip title="Edit">
+                                <IconButton size="small" onClick={() => openEdit(d)} sx={{ color: THEME, '&:hover': { bgcolor: '#eff6ff' } }}>
+                                  <Edit2 size={14} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete">
+                                <IconButton size="small" onClick={() => setDeleteTarget(d)} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fef2f2' } }}>
+                                  <Trash2 size={14} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </td>
+                        )}
                       </tr>
                     );
                   }
@@ -1295,20 +1356,22 @@ export default function DispatchPage() {
                                 </Tooltip>
                               )}
                             </td>
-                            <td rowSpan={items.length} style={{ padding: '10px 14px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', verticalAlign: 'middle' }}>
-                              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                                <Tooltip title="Edit">
-                                  <IconButton size="small" onClick={() => openEdit(d)} sx={{ color: THEME, '&:hover': { bgcolor: '#eff6ff' } }}>
-                                    <Edit2 size={14} />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Delete">
-                                  <IconButton size="small" onClick={() => setDeleteTarget(d)} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fef2f2' } }}>
-                                    <Trash2 size={14} />
-                                  </IconButton>
-                                </Tooltip>
-                              </Box>
-                            </td>
+                            {!readOnly && (
+                              <td rowSpan={items.length} style={{ padding: '10px 14px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', verticalAlign: 'middle' }}>
+                                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                                  <Tooltip title="Edit">
+                                    <IconButton size="small" onClick={() => openEdit(d)} sx={{ color: THEME, '&:hover': { bgcolor: '#eff6ff' } }}>
+                                      <Edit2 size={14} />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Delete">
+                                    <IconButton size="small" onClick={() => setDeleteTarget(d)} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fef2f2' } }}>
+                                      <Trash2 size={14} />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Box>
+                              </td>
+                            )}
                           </>
                         )}
                       </tr>

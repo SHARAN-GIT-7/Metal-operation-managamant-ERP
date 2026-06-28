@@ -137,7 +137,7 @@ const InventorySection = ({ analytics, inventoryItems, loading }: Props) => {
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
                 <Chip label={`${healthyCount} Healthy`} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, bgcolor: '#dcfce7', color: '#15803d', height: 22, border: '1px solid #86efac' }} icon={<CheckCircle2 size={10} style={{ color: '#15803d' }} />} />
                 {criticalCount > 0 && (
-                   <Chip label={`${criticalCount} Critical`} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, bgcolor: '#fee2e2', color: '#dc2626', height: 22, border: '1px solid #fca5a5' }} icon={<AlertTriangle size={10} style={{ color: '#dc2626' }} />} />
+                  <Chip label={`${criticalCount} Critical`} size="small" sx={{ fontSize: '0.65rem', fontWeight: 700, bgcolor: '#fee2e2', color: '#dc2626', height: 22, border: '1px solid #fca5a5' }} icon={<AlertTriangle size={10} style={{ color: '#dc2626' }} />} />
                 )}
               </Box>
 

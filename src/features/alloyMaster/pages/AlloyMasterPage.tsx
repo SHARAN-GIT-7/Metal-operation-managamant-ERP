@@ -13,7 +13,7 @@ import {
   CheckCircle, AlertTriangle,
   Filter, RefreshCw, Percent, Ban,
   ShieldCheck, ShieldOff, FlaskConical, BarChart3,
-  ArrowUpDown,
+  ArrowUpDown, Maximize2, Minimize2,
 } from 'lucide-react';
 import type { AlloyMaster, AlloyMasterFormData, AlloyStatus } from '../types/alloyMaster.types';
 import { ALLOY_CATEGORIES } from '../types/alloyMaster.types';
@@ -93,7 +93,9 @@ const fmtRange = (min: number, max: number) => {
 // ─── Main Page ────────────────────────────────────────────────────────────
 const AlloyMasterPage = () => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [tableMaximized, setTableMaximized] = useState(false);
   const { user } = useAuth();
   const [alloys, setAlloys] = useState<AlloyMaster[]>([]);
   const [loading, setLoading] = useState(true);
@@ -400,7 +402,50 @@ const AlloyMasterPage = () => {
           </Card>
 
           {/* ── Main Table ── */}
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 1px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+          {tableMaximized && (
+            <Box
+              onClick={() => setTableMaximized(false)}
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                bgcolor: 'rgba(0, 0, 0, 0.6)',
+                zIndex: 1290,
+              }}
+            />
+          )}
+
+          <Card 
+            sx={{ 
+              borderRadius: 2.5, 
+              boxShadow: '0 1px 8px rgba(0,0,0,0.06)', 
+              overflow: 'hidden',
+              transition: 'all 0.2s ease',
+              ...(tableMaximized && {
+                position: 'fixed',
+                top: '5vh',
+                left: '5vw',
+                width: '90vw',
+                height: '90vh',
+                zIndex: 1300,
+                borderRadius: 3,
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                bgcolor: 'background.paper',
+              })
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', bgcolor: isDark ? '#1a2130' : '#f8fafc' }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {tableMaximized ? 'Alloy Template Library (Expanded View)' : 'Alloy Template Library'}
+              </Typography>
+              <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+                <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+                  {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </IconButton>
+              </Tooltip>
+            </Box>
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
                 <CircularProgress size={32} />
@@ -419,7 +464,7 @@ const AlloyMasterPage = () => {
                 )}
               </Box>
             ) : (
-              <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+              <TableContainer sx={{ overflowX: 'auto', width: '100%', maxHeight: tableMaximized ? 'calc(90vh - 120px)' : 'none' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ bgcolor: '#f8fafc' }}>
@@ -656,24 +701,63 @@ const AlloyMasterPage = () => {
 
       {/* ══════════ TAB 1: COMPLIANCE & COMPOSITION TABLE ══════════ */}
       {pageTab === 1 && (
-        <Card sx={{ borderRadius: 2.5, boxShadow: '0 1px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-          <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b' }}>
-                Master Alloy Monitoring & Compliance Table
-              </Typography>
-              <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', mt: 0.25 }}>
-                Full chemical composition reference with quality standards — {alloys.length} alloys
-              </Typography>
-            </Box>
-          </Box>
+        <>
+          {tableMaximized && (
+            <Box
+              onClick={() => setTableMaximized(false)}
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                bgcolor: 'rgba(0, 0, 0, 0.6)',
+                zIndex: 1290,
+              }}
+            />
+          )}
 
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress size={28} />
+          <Card 
+            sx={{ 
+              borderRadius: 2.5, 
+              boxShadow: '0 1px 8px rgba(0,0,0,0.06)', 
+              overflow: 'hidden',
+              transition: 'all 0.2s ease',
+              ...(tableMaximized && {
+                position: 'fixed',
+                top: '5vh',
+                left: '5vw',
+                width: '90vw',
+                height: '90vh',
+                zIndex: 1300,
+                borderRadius: 3,
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                bgcolor: 'background.paper',
+              })
+            }}
+          >
+            <Box sx={{ px: 2.5, py: 2, borderBottom: isDark ? '1px solid #2d3748' : '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: isDark ? '#1a2130' : '#f8fafc' }}>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: isDark ? '#f1f5f9' : '#1e293b' }}>
+                  {tableMaximized ? 'Master Alloy Monitoring & Compliance Table (Expanded View)' : 'Master Alloy Monitoring & Compliance Table'}
+                </Typography>
+                <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', mt: 0.25 }}>
+                  Full chemical composition reference with quality standards — {alloys.length} alloys
+                </Typography>
+              </Box>
+              <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+                <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+                  {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </IconButton>
+              </Tooltip>
             </Box>
-          ) : (
-            <TableContainer sx={{ maxHeight: 'calc(100vh - 380px)', overflowX: 'auto', width: '100%' }}>
+
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : (
+              <TableContainer sx={{ maxHeight: tableMaximized ? 'calc(90vh - 75px)' : 'calc(100vh - 380px)', overflowX: 'auto', width: '100%' }}>
               <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow>

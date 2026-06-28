@@ -12,6 +12,7 @@ interface AuthContextType {
   profile: { name: string; role: string } | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginAsAccountsManager: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -72,9 +73,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const userData = userDoc.data();
-    if ((userData.role || '').toLowerCase() !== 'admin') {
+    const role = (userData.role || '').toLowerCase();
+    if (role !== 'admin' && !role.includes('accounts')) {
       await signOut(auth);
-      throw new Error('Access Denied: Only administrators are permitted to access this portal.');
+      throw new Error('Access Denied: Only administrators and accounts managers are permitted to access this portal.');
+    }
+  };
+
+  const loginAsAccountsManager = async (email: string, password: string) => {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const uid = userCredential.user.uid;
+
+    const { getDoc } = await import('firebase/firestore');
+    const userDoc = await getDoc(doc(db, 'users', uid));
+    if (!userDoc.exists()) {
+      await signOut(auth);
+      throw new Error('User profile not found in database.');
+    }
+
+    const userData = userDoc.data();
+    const role = (userData.role || '').toLowerCase();
+    if (!role.includes('accounts')) {
+      await signOut(auth);
+      throw new Error('Access Denied: This portal is restricted to Accounts Managers only.');
     }
   };
 
@@ -109,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, login, loginAsAccountsManager, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -24,21 +24,21 @@ const AlloySparklinesCard = ({ costEntries }: Props) => {
 
     if (activeTab === 'materials') {
       return [
-        { symbol: 'AL', name: 'Pure Aluminum Ingots', price: '₹225.40/kg', change: '+2.14%', isPositive: true, color: getColorForMaterial('AL'), data: [{val: 220}, {val: 222}, {val: 221}, {val: 224}, {val: 223}, {val: 225.4}] },
-        { symbol: 'SI', name: 'Silicon Metal', price: '₹312.50/kg', change: '+6.55%', isPositive: true, color: getColorForMaterial('SI'), data: [{val: 295}, {val: 300}, {val: 305}, {val: 302}, {val: 310}, {val: 312.5}] },
-        { symbol: 'MG', name: 'Magnesium Ingots', price: '₹415.00/kg', change: '-1.25%', isPositive: false, color: getColorForMaterial('MG'), data: [{val: 425}, {val: 420}, {val: 422}, {val: 418}, {val: 416}, {val: 415}] },
-        { symbol: 'CU', name: 'Copper Scrap', price: '₹745.80/kg', change: '+3.98%', isPositive: true, color: getColorForMaterial('CU'), data: [{val: 720}, {val: 728}, {val: 735}, {val: 730}, {val: 742}, {val: 745.8}] },
-        { symbol: 'MN', name: 'Manganese Flakes', price: '₹188.00/kg', change: '-2.33%', isPositive: false, color: getColorForMaterial('MN'), data: [{val: 195}, {val: 192}, {val: 190}, {val: 191}, {val: 189}, {val: 188}] },
+        { symbol: 'AL', name: 'Pure Aluminum Ingots', price: '₹225.40/kg', change: '+2.14%', isPositive: true, color: getColorForMaterial('AL'), data: [{ val: 220 }, { val: 222 }, { val: 221 }, { val: 224 }, { val: 223 }, { val: 225.4 }] },
+        { symbol: 'SI', name: 'Silicon Metal', price: '₹312.50/kg', change: '+6.55%', isPositive: true, color: getColorForMaterial('SI'), data: [{ val: 295 }, { val: 300 }, { val: 305 }, { val: 302 }, { val: 310 }, { val: 312.5 }] },
+        { symbol: 'MG', name: 'Magnesium Ingots', price: '₹415.00/kg', change: '-1.25%', isPositive: false, color: getColorForMaterial('MG'), data: [{ val: 425 }, { val: 420 }, { val: 422 }, { val: 418 }, { val: 416 }, { val: 415 }] },
+        { symbol: 'CU', name: 'Copper Scrap', price: '₹745.80/kg', change: '+3.98%', isPositive: true, color: getColorForMaterial('CU'), data: [{ val: 720 }, { val: 728 }, { val: 735 }, { val: 730 }, { val: 742 }, { val: 745.8 }] },
+        { symbol: 'MN', name: 'Manganese Flakes', price: '₹188.00/kg', change: '-2.33%', isPositive: false, color: getColorForMaterial('MN'), data: [{ val: 195 }, { val: 192 }, { val: 190 }, { val: 191 }, { val: 189 }, { val: 188 }] },
       ];
     }
 
     if (activeTab === 'scrap') {
       return [
-        { symbol: 'TSE', name: 'Tense Scrap', price: '₹182.20/kg', change: '+3.15%', isPositive: true, color: getColorForMaterial('TSE'), data: [{val: 175}, {val: 178}, {val: 176}, {val: 180}, {val: 179}, {val: 182.2}] },
-        { symbol: 'TTR', name: 'Tabor Scrap', price: '₹194.50/kg', change: '+4.20%', isPositive: true, color: getColorForMaterial('TTR'), data: [{val: 186}, {val: 189}, {val: 192}, {val: 190}, {val: 193}, {val: 194.5}] },
-        { symbol: 'EXT', name: 'Extrusion Scrap', price: '₹208.00/kg', change: '+1.80%', isPositive: true, color: getColorForMaterial('EXT'), data: [{val: 202}, {val: 204}, {val: 205}, {val: 206}, {val: 207}, {val: 208}] },
-        { symbol: 'TEL', name: 'Telic Scrap', price: '₹165.00/kg', change: '-0.95%', isPositive: false, color: getColorForMaterial('TEL'), data: [{val: 168}, {val: 167}, {val: 169}, {val: 166}, {val: 165.5}, {val: 165}] },
-        { symbol: 'ZIN', name: 'Zinc Dross', price: '₹212.00/kg', change: '-1.85%', isPositive: false, color: getColorForMaterial('ZIN'), data: [{val: 218}, {val: 216}, {val: 215}, {val: 214}, {val: 213}, {val: 212}] },
+        { symbol: 'TSE', name: 'Tense Scrap', price: '₹182.20/kg', change: '+3.15%', isPositive: true, color: getColorForMaterial('TSE'), data: [{ val: 175 }, { val: 178 }, { val: 176 }, { val: 180 }, { val: 179 }, { val: 182.2 }] },
+        { symbol: 'TTR', name: 'Tabor Scrap', price: '₹194.50/kg', change: '+4.20%', isPositive: true, color: getColorForMaterial('TTR'), data: [{ val: 186 }, { val: 189 }, { val: 192 }, { val: 190 }, { val: 193 }, { val: 194.5 }] },
+        { symbol: 'EXT', name: 'Extrusion Scrap', price: '₹208.00/kg', change: '+1.80%', isPositive: true, color: getColorForMaterial('EXT'), data: [{ val: 202 }, { val: 204 }, { val: 205 }, { val: 206 }, { val: 207 }, { val: 208 }] },
+        { symbol: 'TEL', name: 'Telic Scrap', price: '₹165.00/kg', change: '-0.95%', isPositive: false, color: getColorForMaterial('TEL'), data: [{ val: 168 }, { val: 167 }, { val: 169 }, { val: 166 }, { val: 165.5 }, { val: 165 }] },
+        { symbol: 'ZIN', name: 'Zinc Dross', price: '₹212.00/kg', change: '-1.85%', isPositive: false, color: getColorForMaterial('ZIN'), data: [{ val: 218 }, { val: 216 }, { val: 215 }, { val: 214 }, { val: 213 }, { val: 212 }] },
       ];
     }
 
@@ -58,7 +58,7 @@ const AlloySparklinesCard = ({ costEntries }: Props) => {
           const bd = b.date ? (b.date.toDate ? b.date.toDate() : new Date(b.date as any)) : new Date(0);
           return bd.getTime() - ad.getTime();
         });
-        
+
         const latest = sortedMatching[0];
         currentPrice = latest.sellingPricePerKg || latest.totalProductionCostPerKg || def.basePrice;
 
@@ -100,7 +100,7 @@ const AlloySparklinesCard = ({ costEntries }: Props) => {
       flexDirection: 'column',
     }}>
       <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column', gap: 2.5, '&:last-child': { pb: 3 } }}>
-        
+
         {/* Navigation Tabs */}
         <Box sx={{ display: 'flex', gap: 1, borderBottom: '1px solid #f1f5f9', pb: 1.5, overflowX: 'auto', whiteSpace: 'nowrap' }}>
           {(['trending', 'materials', 'scrap'] as const).map((tab) => (

@@ -34,6 +34,9 @@ export const fetchMaterialReceipts = async (): Promise<MaterialReceipt[]> => {
       id: d.id,
       ...data,
       materials: Array.isArray(data.materials) ? data.materials : [],
+      totalReceivedWeightKg: data.totalReceivedKg ?? data.totalReceivedWeightKg ?? 0,
+      totalReturnedWeightKg: data.totalReturnedKg ?? data.totalReturnedWeightKg ?? 0,
+      totalNetIntakeWeightKg: data.netIntakeKg ?? data.totalNetIntakeWeightKg ?? 0,
     } as MaterialReceipt;
   });
 };

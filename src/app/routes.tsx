@@ -1,7 +1,9 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
-import { ProtectedRoute } from '../components/ProtectedRoute';
+import AccountsLayout from '../layouts/AccountsLayout';
+import { ProtectedRoute, AccountsProtectedRoute } from '../components/ProtectedRoute';
 import { LoginPage } from '../pages/LoginPage';
+import AccountsLoginPage from '../pages/AccountsLoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import DashboardPage from '../features/dashboard/pages/DashboardPage';
 import ProductionLedgerPage from '../features/productionLedger/pages/ProductionLedgerPage';
@@ -26,7 +28,11 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
-    // All app routes are protected
+    path: '/accounts-login',
+    element: <AccountsLoginPage />,
+  },
+  {
+    // All admin app routes are protected
     element: <ProtectedRoute />,
     children: [
       {
@@ -36,7 +42,6 @@ export const router = createBrowserRouter([
             path: 'dashboard',
             element: <DashboardPage />,
           },
-
           {
             path: 'production-ledger',
             element: <ProductionLedgerPage />,
@@ -76,6 +81,33 @@ export const router = createBrowserRouter([
           {
             path: 'dispatch',
             element: <DispatchPage />,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    // Accounts Manager routes — restricted portal
+    element: <AccountsProtectedRoute />,
+    children: [
+      {
+        element: <AccountsLayout />,
+        children: [
+          {
+            path: 'accounts/finished-goods',
+            element: <FinishedGoodsPage readOnly />,
+          },
+          {
+            path: 'accounts/dispatch',
+            element: <DispatchPage readOnly />,
+          },
+          {
+            path: 'accounts/vendor-master',
+            element: <VendorMasterPage noDelete />,
+          },
+          {
+            path: 'accounts/warehouse',
+            element: <WarehousePage readOnly />,
           },
         ],
       },

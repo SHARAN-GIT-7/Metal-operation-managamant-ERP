@@ -8,7 +8,7 @@ import {
 import {
   Warehouse, Package, AlertTriangle, TrendingDown, RefreshCw,
   Search, Trash2, X, CheckCircle2, ArrowUpDown, ChevronLeft,
-  ChevronRight, Eye, IndianRupee,
+  ChevronRight, Eye, IndianRupee, Maximize2, Minimize2,
 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -413,10 +413,13 @@ const ReceiptDetailDialog = ({ receipt, onClose }: ReceiptDetailDialogProps) => 
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-const WarehousePage = () => {
+const WarehousePage = ({ readOnly = false }: { readOnly?: boolean }) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const gridBorder = isDark ? '1px solid #4a5568' : '1px solid #cbd5e1';
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [tableMaximized, setTableMaximized] = useState(false);
   const [receipts, setReceipts] = useState<MaterialReceipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [stockSearch, setStockSearch] = useState('');
@@ -511,6 +514,17 @@ const WarehousePage = () => {
 
   return (
     <Box className="space-y-6 text-slate-800 antialiased">
+      <style>{`
+        .wh-grid-table th,
+        .wh-grid-table td {
+          border-bottom: 1px solid ${isDark ? '#4a5568' : '#cbd5e1'} !important;
+          border-right: 1px solid ${isDark ? '#4a5568' : '#cbd5e1'} !important;
+        }
+        .wh-grid-table th:last-child,
+        .wh-grid-table td:last-child {
+          border-right: none !important;
+        }
+      `}</style>
 
       {/* ── Page Header ── */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', gap: 2 }}>
@@ -629,10 +643,52 @@ const WarehousePage = () => {
             />
           </Box>
 
-          {/* Receipts Table */}
-          <Box sx={{ border: '1px solid #e2e8f0', borderRadius: 2, overflow: 'hidden', backgroundColor: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <Box sx={{ overflowX: 'auto', maxHeight: 580 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+          {tableMaximized && (
+            <Box
+              onClick={() => setTableMaximized(false)}
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                bgcolor: 'rgba(0, 0, 0, 0.6)',
+                zIndex: 1290,
+              }}
+            />
+          )}
+
+          <Box sx={{
+            border: '1px solid',
+            borderColor: isDark ? '#2d3748' : '#e2e8f0',
+            borderRadius: 2,
+            overflow: 'hidden',
+            backgroundColor: isDark ? 'background.paper' : '#fff',
+            boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.5)' : '0 1px 4px rgba(0,0,0,0.04)',
+            transition: 'all 0.2s ease',
+            ...(tableMaximized && {
+              position: 'fixed',
+              top: '5vh',
+              left: '5vw',
+              width: '90vw',
+              height: '90vh',
+              zIndex: 1300,
+              borderRadius: 3,
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            })
+          }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', bgcolor: isDark ? '#1a2130' : '#f8fafc' }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {tableMaximized ? 'Inward Receipts (Expanded View)' : 'Inward Receipts'}
+              </Typography>
+              <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+                <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+                  {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <Box sx={{ overflowX: 'auto', maxHeight: tableMaximized ? 'calc(90vh - 120px)' : 580 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }} className="wh-grid-table">
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', position: 'sticky', top: 0, zIndex: 10 }}>
                     <th rowSpan={2} onClick={() => requestSort('siNo')} style={{
@@ -761,9 +817,9 @@ const WarehousePage = () => {
                       if (activeMs.length === 0) {
                         return (
                           <tr key={r.id}
-                            style={{ 
-                              backgroundColor: isHovered ? '#eff6ff' : (isEven ? '#fff' : '#f8fafc'), 
-                              transition: 'background 0.1s' 
+                            style={{
+                              backgroundColor: isHovered ? '#eff6ff' : (isEven ? '#fff' : '#f8fafc'),
+                              transition: 'background 0.1s'
                             }}
                             onMouseEnter={() => setHoveredReceiptId(r.id)}
                             onMouseLeave={() => setHoveredReceiptId(null)}
@@ -786,7 +842,7 @@ const WarehousePage = () => {
                             <td style={{ padding: '10px 14px', color: '#94a3b8', textAlign: 'right', borderBottom: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>—</td>
                             <td style={{ padding: '10px 14px', color: '#94a3b8', textAlign: 'right', borderBottom: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>—</td>
                             <td style={{ padding: '10px 14px', color: '#94a3b8', textAlign: 'right', borderBottom: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>—</td>
-                            
+
                             <td style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, color: '#1e293b', borderBottom: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>
                               {fmtNum(r.totalReceivedWeightKg)}
                             </td>
@@ -806,11 +862,13 @@ const WarehousePage = () => {
                                     <Eye size={14} />
                                   </IconButton>
                                 </Tooltip>
-                                <Tooltip title="Delete Receipt">
-                                  <IconButton size="small" onClick={() => setDeleteTarget(r)} sx={{ color: '#dc2626', '&:hover': { backgroundColor: '#fff1f2' } }}>
-                                    <Trash2 size={14} />
-                                  </IconButton>
-                                </Tooltip>
+                                {!readOnly && (
+                                  <Tooltip title="Delete Receipt">
+                                    <IconButton size="small" onClick={() => setDeleteTarget(r)} sx={{ color: '#dc2626', '&:hover': { backgroundColor: '#fff1f2' } }}>
+                                      <Trash2 size={14} />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
                               </Box>
                             </td>
                           </tr>
@@ -821,9 +879,9 @@ const WarehousePage = () => {
                         const isFirst = mi === 0;
                         return (
                           <tr key={`${r.id}-${mi}`}
-                            style={{ 
-                              backgroundColor: isHovered ? '#eff6ff' : (isEven ? '#fff' : '#f8fafc'), 
-                              transition: 'background 0.1s' 
+                            style={{
+                              backgroundColor: isHovered ? '#eff6ff' : (isEven ? '#fff' : '#f8fafc'),
+                              transition: 'background 0.1s'
                             }}
                             onMouseEnter={() => setHoveredReceiptId(r.id)}
                             onMouseLeave={() => setHoveredReceiptId(null)}
@@ -844,11 +902,11 @@ const WarehousePage = () => {
                                 </td>
                               </>
                             )}
-                            
+
                             {/* Materials Split Columns */}
-                            <td style={{ 
-                              padding: '10px 14px', 
-                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9', 
+                            <td style={{
+                              padding: '10px 14px',
+                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9',
                               borderRight: '1px solid #e2e8f0',
                               verticalAlign: 'middle'
                             }}>
@@ -859,49 +917,49 @@ const WarehousePage = () => {
                                 {m.materialCode}
                               </span>
                             </td>
-                            <td style={{ 
-                              padding: '10px 14px', 
-                              textAlign: 'right', 
-                              fontFamily: 'monospace', 
-                              color: '#475569', 
+                            <td style={{
+                              padding: '10px 14px',
+                              textAlign: 'right',
+                              fontFamily: 'monospace',
+                              color: '#475569',
                               fontWeight: 600,
-                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9', 
+                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9',
                               borderRight: '1px solid #e2e8f0',
                               verticalAlign: 'middle'
                             }}>
                               {m.netIntakeWeightKg ? fmtNum(m.netIntakeWeightKg) : '—'}
                             </td>
-                            <td style={{ 
-                              padding: '10px 14px', 
-                              textAlign: 'right', 
-                              fontFamily: 'monospace', 
-                              color: '#475569', 
+                            <td style={{
+                              padding: '10px 14px',
+                              textAlign: 'right',
+                              fontFamily: 'monospace',
+                              color: '#475569',
                               fontWeight: 600,
-                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9', 
+                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9',
                               borderRight: '1px solid #e2e8f0',
                               verticalAlign: 'middle'
                             }}>
                               {m.costPerKg ? fmtNum(m.costPerKg, 0) : '—'}
                             </td>
-                            <td style={{ 
-                              padding: '10px 14px', 
-                              textAlign: 'right', 
-                              fontFamily: 'monospace', 
-                              color: '#0f172a', 
+                            <td style={{
+                              padding: '10px 14px',
+                              textAlign: 'right',
+                              fontFamily: 'monospace',
+                              color: '#0f172a',
                               fontWeight: 700,
-                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9', 
+                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9',
                               borderRight: '1px solid #e2e8f0',
                               verticalAlign: 'middle'
                             }}>
                               {m.netIntakeWeightKg && m.costPerKg ? fmtNum(m.netIntakeWeightKg * m.costPerKg, 0) : '—'}
                             </td>
-                            <td style={{ 
-                              padding: '10px 14px', 
-                              textAlign: 'right', 
-                              fontFamily: 'monospace', 
-                              color: '#7c3aed', 
+                            <td style={{
+                              padding: '10px 14px',
+                              textAlign: 'right',
+                              fontFamily: 'monospace',
+                              color: '#7c3aed',
                               fontWeight: 700,
-                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9', 
+                              borderBottom: mi === activeMs.length - 1 ? '1px solid #e2e8f0' : '1px solid #f1f5f9',
                               borderRight: '1px solid #e2e8f0',
                               verticalAlign: 'middle'
                             }}>

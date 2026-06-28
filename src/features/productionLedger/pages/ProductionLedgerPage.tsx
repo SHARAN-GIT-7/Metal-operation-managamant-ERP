@@ -8,7 +8,7 @@ import {
     InputLabel, Select, MenuItem, useTheme, useMediaQuery,
 } from '@mui/material';
 import {
-    Search, Plus, Edit, Trash2, RefreshCw, Download, ArrowUpDown,
+    Search, Plus, Edit, Trash2, RefreshCw, Download, ArrowUpDown, Maximize2, Minimize2, X,
 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -40,35 +40,42 @@ const effColor = (eff: number, efficiencyStatus?: string) => {
     return { bg: '#ffebee', text: '#c62828' };
 };
 
-// Sticky header cell style
-const stickyHead = {
-    fontWeight: 700,
-    fontSize: '0.72rem',
-    whiteSpace: 'nowrap' as const,
-    background: '#f9fafb',
-    py: 1.2,
-    px: 1,
-    borderBottom: '2px solid #e0e0e0',
-};
-
-const bodyCell = {
-    fontSize: '0.78rem',
-    py: 0.9,
-    px: 1,
-    whiteSpace: 'nowrap' as const,
-};
-
 // ─── component ─────────────────────────────────────────────────────────────────
 const ProductionLedgerPage = () => {
     const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { getByModule, loading: materialsLoading } = useMaterials();
     const productionMaterials = getByModule('production');
+
+    // Sticky header cell style
+    const stickyHead = {
+        fontWeight: 700,
+        fontSize: '0.72rem',
+        whiteSpace: 'nowrap' as const,
+        background: isDark ? '#1a2130' : '#f1f5f9',
+        py: 1.2,
+        px: 1,
+        borderBottom: `2px solid ${isDark ? '#4a5568' : '#cbd5e1'}`,
+        borderRight: `1px solid ${isDark ? '#4a5568' : '#cbd5e1'}`,
+        color: isDark ? '#f1f5f9' : '#1e293b',
+    };
+
+    const bodyCell = {
+        fontSize: '0.78rem',
+        py: 0.9,
+        px: 1,
+        whiteSpace: 'nowrap' as const,
+        borderBottom: `1px solid ${isDark ? '#4a5568' : '#cbd5e1'}`,
+        borderRight: `1px solid ${isDark ? '#4a5568' : '#cbd5e1'}`,
+        color: isDark ? '#e2e8f0' : '#334155',
+    };
 
     const [entries, setEntries] = useState<ProductionLedgerEntry[]>([]);
     const [approvedHeats, setApprovedHeats] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [tableMaximized, setTableMaximized] = useState(false);
     const [editEntry, setEditEntry] = useState<ProductionLedgerEntry | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<ProductionLedgerEntry | null>(null);
     const [deleting, setDeleting] = useState(false);
@@ -121,9 +128,9 @@ const ProductionLedgerPage = () => {
             setEntries(data);
             const fgData = await fetchFinishedGoods();
             const approved = new Set(
-              fgData
-                .filter((fg) => fg.manuallyApproved === true)
-                .map((fg) => fg.heatNo)
+                fgData
+                    .filter((fg) => fg.manuallyApproved === true)
+                    .map((fg) => fg.heatNo)
             );
             setApprovedHeats(approved);
         } catch (err) {
@@ -392,7 +399,7 @@ const ProductionLedgerPage = () => {
                                     onClick: (e) => {
                                         try {
                                             (e.target as any).showPicker?.();
-                                        } catch (err) {}
+                                        } catch (err) { }
                                     }
                                 }
                             }}
@@ -420,7 +427,7 @@ const ProductionLedgerPage = () => {
                                     onClick: (e) => {
                                         try {
                                             (e.target as any).showPicker?.();
-                                        } catch (err) {}
+                                        } catch (err) { }
                                     }
                                 }
                             }}
@@ -500,9 +507,52 @@ const ProductionLedgerPage = () => {
                 </CardContent>
             </Card>
 
-            {/* ── Table ── */}
-            <Paper elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, overflow: 'hidden' }}>
-                <TableContainer sx={{ maxHeight: 'calc(100vh - 380px)', overflowX: 'auto' }}>
+            {tableMaximized && (
+                <Box
+                    onClick={() => setTableMaximized(false)}
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        bgcolor: 'rgba(0, 0, 0, 0.6)',
+                        zIndex: 1290,
+                    }}
+                />
+            )}
+
+            <Paper 
+                elevation={tableMaximized ? 24 : 0} 
+                sx={{ 
+                    border: isDark ? '1px solid #2d3748' : '1px solid #e0e0e0', 
+                    borderRadius: 2, 
+                    overflow: 'hidden',
+                    backgroundColor: 'background.paper',
+                    transition: 'all 0.2s ease',
+                    ...(tableMaximized && {
+                        position: 'fixed',
+                        top: '5vh',
+                        left: '5vw',
+                        width: '90vw',
+                        height: '90vh',
+                        zIndex: 1300,
+                        borderRadius: 3,
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                    })
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e0e0e0', bgcolor: isDark ? '#1a2130' : '#f8fafc' }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        {tableMaximized ? 'Production Ledger (Expanded View)' : 'Production Records'}
+                    </Typography>
+                    <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+                        <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+                            {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+                <TableContainer sx={{ maxHeight: tableMaximized ? 'calc(90vh - 55px)' : 'calc(100vh - 380px)', overflowX: 'auto' }}>
                     <Table stickyHeader size="small" aria-label="production ledger table">
                         <TableHead>
                             <TableRow>
@@ -732,9 +782,9 @@ const ProductionLedgerPage = () => {
                                                         size="small"
                                                         variant="outlined"
                                                         color="success"
-                                                        sx={{ 
-                                                            fontWeight: 600, 
-                                                            fontSize: '0.65rem', 
+                                                        sx={{
+                                                            fontWeight: 600,
+                                                            fontSize: '0.65rem',
                                                             height: 20,
                                                             borderColor: 'success.light',
                                                             color: 'success.dark',
@@ -774,10 +824,10 @@ const ProductionLedgerPage = () => {
             />
 
             {/* ── Delete Confirm Dialog ── */}
-            <Dialog 
-                open={!!deleteTarget} 
-                onClose={() => setDeleteTarget(null)} 
-                maxWidth="xs" 
+            <Dialog
+                open={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                maxWidth="xs"
                 fullWidth
                 fullScreen={isMobile}
                 slotProps={{ paper: { sx: { borderRadius: isMobile ? 0 : 3 } } }}

@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import {
   Search, Plus, Edit, Trash2, RefreshCw, Download, FileSpreadsheet,
-  ArrowUpDown, ChevronLeft, ChevronRight, X
+  ArrowUpDown, ChevronLeft, ChevronRight, X, Maximize2, Minimize2
 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
@@ -45,7 +45,9 @@ const fmtQty = (val: number | undefined) => {
 
 const CostLedgerPage = () => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [tableMaximized, setTableMaximized] = useState(false);
   const { getByModule, loading: materialsLoading } = useMaterials();
   const costMaterials = getByModule('costLedger');
 
@@ -534,10 +536,66 @@ const CostLedgerPage = () => {
         </CardContent>
       </Card>
 
+      {tableMaximized && (
+        <div
+          onClick={() => setTableMaximized(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 1290,
+          }}
+        />
+      )}
+
       {/* ── Main Spreadsheet Table ── */}
-      <div className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto w-full max-h-[600px] scrollbar-thin">
-          <table className="min-w-full divide-y divide-slate-200 border-collapse text-left">
+      <style>{`
+        .cost-grid-table th,
+        .cost-grid-table td {
+          border-bottom: 1px solid ${isDark ? '#4a5568' : '#cbd5e1'} !important;
+          border-right: 1px solid ${isDark ? '#4a5568' : '#cbd5e1'} !important;
+        }
+        .cost-grid-table th:last-child,
+        .cost-grid-table td:last-child {
+          border-right: none !important;
+        }
+      `}</style>
+      <div 
+        className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden"
+        style={tableMaximized ? {
+          position: 'fixed',
+          top: '5vh',
+          left: '5vw',
+          width: '90vw',
+          height: '90vh',
+          zIndex: 1300,
+          borderRadius: '12px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          backgroundColor: isDark ? '#161b27' : '#fff',
+          borderColor: isDark ? '#2d3748' : '#e2e8f0',
+        } : {
+          backgroundColor: isDark ? '#161b27' : '#fff',
+          borderColor: isDark ? '#2d3748' : '#e2e8f0',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', backgroundColor: isDark ? '#1a2130' : '#f8fafc' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {tableMaximized ? 'Cost Ledger Spreadsheet (Expanded View)' : 'Cost Ledger Spreadsheet'}
+          </Typography>
+          <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+            <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+              {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </IconButton>
+          </Tooltip>
+        </div>
+        <div 
+          className="overflow-x-auto w-full scrollbar-thin"
+          style={{ maxHeight: tableMaximized ? 'calc(90vh - 55px)' : '600px' }}
+        >
+          <table className="min-w-full divide-y divide-slate-200 border-collapse text-left cost-grid-table">
             <thead className="bg-slate-100 sticky top-0 z-30 shadow-sm text-slate-700 font-bold uppercase tracking-wider text-[10px]">
               {/* Header row 1: Section Labels */}
               <tr>

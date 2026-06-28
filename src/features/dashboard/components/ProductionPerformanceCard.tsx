@@ -32,8 +32,8 @@ const ProductionPerformanceCard = ({ analytics, kpi, filters, setFilters }: Prop
   const isNeutral = Math.abs(change) < 0.1;
 
   // Format value to look like mockup, e.g. "$128.4K" -> "128.4 T" or similar weight
-  const mainValue = kpi.value >= 1000 
-    ? (kpi.value / 1000).toFixed(1) + ' T' 
+  const mainValue = kpi.value >= 1000
+    ? (kpi.value / 1000).toFixed(1) + ' T'
     : kpi.value.toLocaleString('en-IN') + ' kg';
 
   const rangeButtons: { label: string; value: typeof filters.datePreset }[] = [
@@ -56,7 +56,7 @@ const ProductionPerformanceCard = ({ analytics, kpi, filters, setFilters }: Prop
       overflow: 'visible'
     }}>
       <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
-        
+
         {/* Top Header Row */}
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -67,7 +67,7 @@ const ProductionPerformanceCard = ({ analytics, kpi, filters, setFilters }: Prop
               Production Performance
             </Typography>
           </Box>
-          
+
           {/* Ranges Switcher */}
           <Box sx={{ display: 'flex', gap: 0.5, bgcolor: '#f8fafc', p: 0.5, borderRadius: 2.5, border: '1px solid #f1f5f9', alignSelf: { xs: 'stretch', sm: 'auto' }, justifyContent: 'space-between' }}>
             {rangeButtons.map((btn) => (
@@ -125,8 +125,8 @@ const ProductionPerformanceCard = ({ analytics, kpi, filters, setFilters }: Prop
         {/* Main Area Chart */}
         <Box sx={{ width: '100%', height: 260, position: 'relative' }}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart 
-              data={analytics.dailyProductionTrend} 
+            <AreaChart
+              data={analytics.dailyProductionTrend}
               margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
             >
               <defs>
@@ -136,27 +136,27 @@ const ProductionPerformanceCard = ({ analytics, kpi, filters, setFilters }: Prop
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="4 4" vertical={true} horizontal={false} stroke="#e2e8f0" />
-              <XAxis 
-                dataKey="date" 
-                tick={axisStyle} 
-                axisLine={false} 
+              <XAxis
+                dataKey="date"
+                tick={axisStyle}
+                axisLine={false}
                 tickLine={false}
                 padding={{ left: 10, right: 10 }}
               />
-              <YAxis 
-                tick={axisStyle} 
-                axisLine={false} 
+              <YAxis
+                tick={axisStyle}
+                axisLine={false}
                 tickLine={false}
                 tickFormatter={(v) => formatWeight(v)}
                 width={50}
               />
-              <Tooltip 
-                {...tooltipStyle} 
+              <Tooltip
+                {...tooltipStyle}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     const prodVal = payload[0].value as number;
                     // Mock a potential value as 1.08x actual to replicate the image design
-                    const potentialVal = prodVal * 1.12; 
+                    const potentialVal = prodVal * 1.12;
                     return (
                       <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', mb: 0.5 }}>{label}</Typography>
@@ -178,14 +178,14 @@ const ProductionPerformanceCard = ({ analytics, kpi, filters, setFilters }: Prop
                   return null;
                 }}
               />
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#3b82f6" 
-                strokeWidth={3} 
-                fill="url(#performanceGrad)" 
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                fill="url(#performanceGrad)"
                 dot={false}
-                activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#ffffff' }} 
+                activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#ffffff' }}
               />
             </AreaChart>
           </ResponsiveContainer>

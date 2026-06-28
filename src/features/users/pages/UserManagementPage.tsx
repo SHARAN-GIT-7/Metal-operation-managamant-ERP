@@ -41,6 +41,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertOctagon,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import {
   fetchUsers,
@@ -144,9 +146,11 @@ const KpiCard = ({ icon, label, value, sub, color, bg, loading }: KpiCardProps) 
 const UserManagementPage = () => {
   const { user: currentAuthUser } = useAuth();
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const [users, setUsers] = useState<UserEntry[]>([]);
+  const [tableMaximized, setTableMaximized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -592,14 +596,59 @@ const UserManagementPage = () => {
         </CardContent>
       </Card>
 
+      {tableMaximized && (
+        <div
+          onClick={() => setTableMaximized(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 1290,
+          }}
+        />
+      )}
+
       {/* ── Users Table ── */}
-      <div className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden">
+      <div 
+        className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden"
+        style={tableMaximized ? {
+          position: 'fixed',
+          top: '5vh',
+          left: '5vw',
+          width: '90vw',
+          height: '90vh',
+          zIndex: 1300,
+          borderRadius: '12px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          backgroundColor: isDark ? '#161b27' : '#fff',
+          borderColor: isDark ? '#2d3748' : '#e2e8f0',
+        } : {
+          backgroundColor: isDark ? '#161b27' : '#fff',
+          borderColor: isDark ? '#2d3748' : '#e2e8f0',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', backgroundColor: isDark ? '#1a2130' : '#f8fafc' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {tableMaximized ? 'User Directory (Expanded View)' : 'User Directory'}
+          </Typography>
+          <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+            <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+              {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </IconButton>
+          </Tooltip>
+        </div>
         {error && (
           <div className="p-4 bg-red-50 border-b border-red-200 text-red-700 text-xs font-semibold">
             {error}
           </div>
         )}
-        <div className="overflow-x-auto max-h-[600px]">
+        <div 
+          className="overflow-x-auto"
+          style={{ maxHeight: tableMaximized ? 'calc(90vh - 55px)' : '600px' }}
+        >
           <table className="min-w-full text-left border-collapse">
             <thead className={`${stickyHead} sticky top-0 z-20 shadow-sm`}>
               <tr>
@@ -836,6 +885,10 @@ const UserManagementPage = () => {
                   <MenuItem value="Admin">Admin</MenuItem>
                   <MenuItem value="Production Manager">Production Manager</MenuItem>
                   <MenuItem value="Supervisor">Supervisor</MenuItem>
+                  <MenuItem value="Accounts Manager">
+                    Accounts Manager
+                    <span style={{ marginLeft: 8, fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: 20, background: '#d1fae5', color: '#065f46' }}>ACCOUNTS PORTAL</span>
+                  </MenuItem>
                 </Select>
               </FormControl>
 
@@ -931,6 +984,10 @@ const UserManagementPage = () => {
                   <MenuItem value="Admin">Admin</MenuItem>
                   <MenuItem value="Production Manager">Production Manager</MenuItem>
                   <MenuItem value="Supervisor">Supervisor</MenuItem>
+                  <MenuItem value="Accounts Manager">
+                    Accounts Manager
+                    <span style={{ marginLeft: 8, fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: 20, background: '#d1fae5', color: '#065f46' }}>ACCOUNTS PORTAL</span>
+                  </MenuItem>
                 </Select>
               </FormControl>
 

@@ -9,7 +9,7 @@ import {
   Package, Edit, Search, ChevronLeft, ChevronRight,
   ArrowUpDown, X, Layers, Truck, IndianRupee,
   CheckCircle2, Archive, ChevronDown,
-  BarChart3, TableIcon,
+  BarChart3, TableIcon, Maximize2, Minimize2,
 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
@@ -794,10 +794,13 @@ interface AlloyDetailProps {
 }
 
 const AlloyDetailView = ({ group, isAdmin, onEdit, onBack, productionEntries, costEntries }: AlloyDetailProps) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const bodyCell = 'px-3 py-2 border-b border-slate-50 text-xs text-slate-700 whitespace-nowrap';
 
   const [sortKey, setSortKey] = useState<string>('productionDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [tableMaximized, setTableMaximized] = useState(false);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -881,11 +884,52 @@ const AlloyDetailView = ({ group, isAdmin, onEdit, onBack, productionEntries, co
         ))}
       </div>
 
+      {tableMaximized && (
+        <div
+          onClick={() => setTableMaximized(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 1290,
+          }}
+        />
+      )}
+
       {/* Detail table */}
-      <Card sx={{ borderRadius: 3, boxShadow: '0 1px 6px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+      <Card sx={{ 
+        borderRadius: 3, 
+        boxShadow: '0 1px 6px rgba(0,0,0,0.06)', 
+        border: '1px solid #e2e8f0', 
+        overflow: 'hidden',
+        transition: 'all 0.2s ease',
+        ...(tableMaximized && {
+          position: 'fixed',
+          top: '5vh',
+          left: '5vw',
+          width: '90vw',
+          height: '90vh',
+          zIndex: 1300,
+          borderRadius: 3,
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        })
+      }}>
         <div style={{ height: 3, background: THEME_BLUE }} />
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left border-collapse">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', backgroundColor: isDark ? '#1a2130' : '#f8fafc' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {tableMaximized ? `Heats for ${group.alloyType} (Expanded View)` : `Heats for ${group.alloyType}`}
+          </Typography>
+          <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+            <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+              {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </IconButton>
+          </Tooltip>
+        </div>
+        <div className="overflow-x-auto" style={{ maxHeight: tableMaximized ? 'calc(90vh - 65px)' : 'none' }}>
+          <table className="min-w-full text-left border-collapse fg-grid-table">
             <thead>
               <tr className="bg-slate-100">
                 <th className="px-3 py-2 border-b border-slate-200 w-10 text-center text-[10px] text-slate-600 font-bold uppercase tracking-wider">S.No</th>
@@ -1012,8 +1056,15 @@ const AlloyDetailView = ({ group, isAdmin, onEdit, onBack, productionEntries, co
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-const FinishedGoodsPage = () => {
-  const isAdmin = true;
+interface FinishedGoodsPageProps {
+  readOnly?: boolean;
+}
+
+const FinishedGoodsPage = ({ readOnly = false }: FinishedGoodsPageProps) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const [tableMaximized, setTableMaximized] = useState(false);
+  const isAdmin = !readOnly;
 
   const [entries, setEntries] = useState<FinishedGoodEntry[]>([]);
   const [productionEntries, setProductionEntries] = useState<ProductionLedgerEntry[]>([]);
@@ -1025,7 +1076,8 @@ const FinishedGoodsPage = () => {
   const [editTarget, setEditTarget] = useState<FinishedGoodEntry | null>(null);
 
   // View mode: 'group' (card overview), 'table' (flat), or 'approval' (pending queue)
-  const [viewMode, setViewMode] = useState<'group' | 'table' | 'approval'>('group');
+  // In readOnly mode, lock to 'group' view only
+  const [viewMode, setViewMode] = useState<'group' | 'table' | 'approval'>(readOnly ? 'group' : 'group');
 
   // Which alloy group is expanded in drilldown (null = overview cards)
   const [selectedAlloy, setSelectedAlloy] = useState<string | null>(null);
@@ -1291,6 +1343,17 @@ const FinishedGoodsPage = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: '100%' }}>
+      <style>{`
+        .fg-grid-table th,
+        .fg-grid-table td {
+          border-bottom: 1px solid ${isDark ? '#4a5568' : '#cbd5e1'} !important;
+          border-right: 1px solid ${isDark ? '#4a5568' : '#cbd5e1'} !important;
+        }
+        .fg-grid-table th:last-child,
+        .fg-grid-table td:last-child {
+          border-right: none !important;
+        }
+      `}</style>
       {/* ── Page Header ── */}
       <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
         <Box>
@@ -1371,23 +1434,27 @@ const FinishedGoodsPage = () => {
               >
                 <BarChart3 size={12} /> Group by Alloy
               </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === 'table' ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-              >
-                <TableIcon size={12} /> Table View
-              </button>
-              <button
-                onClick={() => setViewMode('approval')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === 'approval' ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-              >
-                Approval Queue
-                {unapprovedHeats.length > 0 && (
-                  <span className="ml-1.5 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
-                    {unapprovedHeats.length}
-                  </span>
-                )}
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === 'table' ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  <TableIcon size={12} /> Table View
+                </button>
+              )}
+              {!readOnly && (
+                <button
+                  onClick={() => setViewMode('approval')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${viewMode === 'approval' ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  Approval Queue
+                  {unapprovedHeats.length > 0 && (
+                    <span className="ml-1.5 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                      {unapprovedHeats.length}
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -1395,20 +1462,68 @@ const FinishedGoodsPage = () => {
 
       {/* ── APPROVAL QUEUE VIEW ── */}
       {viewMode === 'approval' && (
-        <div className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-          <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-            <div>
-              <Typography className="font-extrabold text-sm text-slate-800">Pending Approvals Queue</Typography>
-              <Typography className="text-[11px] text-slate-500 font-medium">Heats must have complete Production and Cost Ledger entries before approval.</Typography>
-            </div>
-            <Chip
-              label={`${unapprovedHeats.length} pending heats`}
-              size="small"
-              sx={{ bgcolor: '#fff8e1', color: '#b78103', fontWeight: 700, border: '1px solid #ffe082', fontSize: '0.7rem' }}
+        <>
+          {tableMaximized && (
+            <div
+              onClick={() => setTableMaximized(false)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                zIndex: 1290,
+              }}
             />
-          </div>
-          <div className="overflow-x-auto max-h-[600px]">
-            <table className="min-w-full text-left border-collapse">
+          )}
+          <div 
+            className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden mb-4"
+            style={tableMaximized ? {
+              position: 'fixed',
+              top: '5vh',
+              left: '5vw',
+              width: '90vw',
+              height: '90vh',
+              zIndex: 1300,
+              borderRadius: '12px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              backgroundColor: isDark ? '#161b27' : '#fff',
+              borderColor: isDark ? '#2d3748' : '#e2e8f0',
+            } : {
+              backgroundColor: isDark ? '#161b27' : '#fff',
+              borderColor: isDark ? '#2d3748' : '#e2e8f0',
+            }}
+          >
+            <div 
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', backgroundColor: isDark ? '#1a2130' : '#f8fafc' }}
+            >
+              <div>
+                <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {tableMaximized ? 'Pending Approvals Queue (Expanded View)' : 'Pending Approvals Queue'}
+                </Typography>
+                <Typography sx={{ fontSize: '10px', color: isDark ? '#64748b' : '#94a3b8' }}>
+                  Heats must have complete Production and Cost Ledger entries before approval.
+                </Typography>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Chip
+                  label={`${unapprovedHeats.length} pending heats`}
+                  size="small"
+                  sx={{ bgcolor: isDark ? 'rgba(217, 119, 6, 0.15)' : '#fff8e1', color: isDark ? '#fbbf24' : '#b78103', fontWeight: 700, border: isDark ? '1px solid rgba(217, 119, 6, 0.3)' : '1px solid #ffe082', fontSize: '0.7rem' }}
+                />
+                <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+                  <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+                    {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                  </IconButton>
+                </Tooltip>
+              </div>
+            </div>
+            <div 
+              className="overflow-x-auto"
+              style={{ maxHeight: tableMaximized ? 'calc(90vh - 65px)' : '600px' }}
+            >
+            <table className="min-w-full text-left border-collapse fg-grid-table">
               <thead className={`${stickyHead} sticky top-0 z-20 shadow-sm`}>
                 <tr>
                   <th className="px-3 py-2 border-b border-slate-200 w-12 text-center bg-slate-100 text-[10px] text-slate-600 font-bold uppercase tracking-wider">#</th>
@@ -1680,6 +1795,7 @@ const FinishedGoodsPage = () => {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* ── GROUP VIEW ── */}
@@ -1736,9 +1852,54 @@ const FinishedGoodsPage = () => {
 
       {/* ── FLAT TABLE VIEW ── */}
       {viewMode === 'table' && (
-        <div className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto max-h-[600px]">
-            <table className="min-w-full text-left border-collapse">
+        <>
+          {tableMaximized && (
+            <div
+              onClick={() => setTableMaximized(false)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                zIndex: 1290,
+              }}
+            />
+          )}
+          <div 
+            className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden"
+            style={tableMaximized ? {
+              position: 'fixed',
+              top: '5vh',
+              left: '5vw',
+              width: '90vw',
+              height: '90vh',
+              zIndex: 1300,
+              borderRadius: '12px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              backgroundColor: isDark ? '#161b27' : '#fff',
+              borderColor: isDark ? '#2d3748' : '#e2e8f0',
+            } : {
+              backgroundColor: isDark ? '#161b27' : '#fff',
+              borderColor: isDark ? '#2d3748' : '#e2e8f0',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: isDark ? '1px solid #2d3748' : '1px solid #e2e8f0', backgroundColor: isDark ? '#1a2130' : '#f8fafc' }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {tableMaximized ? 'Finished Goods Inventory (Expanded View)' : 'Finished Goods Inventory'}
+              </Typography>
+              <Tooltip title={tableMaximized ? "Close / Minimize" : "Maximize Table"}>
+                <IconButton size="small" onClick={() => setTableMaximized(!tableMaximized)} sx={{ color: 'text.secondary' }}>
+                  {tableMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </IconButton>
+              </Tooltip>
+            </div>
+            <div 
+              className="overflow-x-auto"
+              style={{ maxHeight: tableMaximized ? 'calc(90vh - 120px)' : '600px' }}
+            >
+            <table className="min-w-full text-left border-collapse fg-grid-table">
               <thead className={`${stickyHead} sticky top-0 z-20 shadow-sm`}>
                 <tr>
                   <th className="px-3 py-2 border-b border-slate-200 w-12 min-w-[48px] max-w-[48px] text-center sticky left-0 z-30 bg-slate-100">#</th>
@@ -1895,6 +2056,7 @@ const FinishedGoodsPage = () => {
             </div>
           )}
         </div>
+        </>
       )}
 
       {/* ── Edit Dialog ── */}

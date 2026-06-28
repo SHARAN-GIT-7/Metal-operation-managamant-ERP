@@ -1,10 +1,10 @@
-import { 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Box,
   Typography,
   Divider,
@@ -62,10 +62,10 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }: Side
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ 
-        height: 64, 
-        display: 'flex', 
-        alignItems: 'center', 
+      <Box sx={{
+        height: 64,
+        display: 'flex',
+        alignItems: 'center',
         px: 2,
         gap: 1.5,
         borderBottom: `1px solid ${theme.palette.divider}`
@@ -94,14 +94,14 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }: Side
                     },
                   }}
                 >
-                  <ListItemIcon sx={{ 
+                  <ListItemIcon sx={{
                     color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
-                    minWidth: 40 
+                    minWidth: 40
                   }}>
                     {item.icon}
                   </ListItemIcon>
-                  <ListItemText 
-                    primary={item.text} 
+                  <ListItemText
+                    primary={item.text}
                     sx={{
                       '& .MuiListItemText-primary': {
                         fontSize: '0.875rem',
@@ -143,14 +143,14 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }: Side
                     },
                   }}
                 >
-                  <ListItemIcon sx={{ 
+                  <ListItemIcon sx={{
                     color: isActive ? '#b45309' : '#d97706',
-                    minWidth: 40 
+                    minWidth: 40
                   }}>
                     {item.icon}
                   </ListItemIcon>
-                  <ListItemText 
-                    primary={item.text} 
+                  <ListItemText
+                    primary={item.text}
                     sx={{
                       '& .MuiListItemText-primary': {
                         fontSize: '0.875rem',
